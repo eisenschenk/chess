@@ -19,16 +19,17 @@ namespace VnodeTest
         public static VNode Render()
         {
             return Div(
-                RenderBoard()
-                );
+                RenderTile(new GameEntities.Tile(1))
+                ); 
         }
 
         private VNode RenderBoard()
         {
+            return Div();
             //for (int index = 0; index < 8; index++)
             //    Fragment(Board.Board.Where(y => y.Index / 8 <= index).Select(y => RenderTile(y)));
         }
-        private VNode RenderTile(GameEntities.Tile tile)
+        private static VNode RenderTile(GameEntities.Tile tile)
         {
             return Div(
                 tile.TileStyle,
