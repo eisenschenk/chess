@@ -1,0 +1,94 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{8A5D6D48-11F3-46DA-8898-4DDCA76E336B}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>VnodeTest</RootNamespace>
+    <AssemblyName>VnodeTest</AssemblyName>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <Deterministic>true</Deterministic>
+    <LangVersion>8.0</LangVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="ACL">
+      <HintPath>..\..\..\..\..\..\Projekt\dll\ACL.Dev\ACL.dll</HintPath>
+    </Reference>
+    <Reference Include="ACL.Sys">
+      <HintPath>..\..\..\..\..\..\Projekt\dll\ACL.Dev\ACL.Sys.dll</HintPath>
+    </Reference>
+    <Reference Include="AngleSharp">
+      <HintPath>..\..\..\..\..\..\Projekt\dll\ACL.Dev\AngleSharp\AngleSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="AngleSharp.Css">
+      <HintPath>..\..\..\..\..\..\Projekt\dll\ACL.Dev\AngleSharp\AngleSharp.Css.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AppContext.cs" />
+    <Compile Include="Application.cs" />
+    <Compile Include="ColorThemeComponent.cs" />
+    <Compile Include="GameboardController.cs" />
+    <Compile Include="GameEntities\BasePiece.cs" />
+    <Compile Include="GameEntities\Bishop.cs" />
+    <Compile Include="GameEntities\King.cs" />
+    <Compile Include="GameEntities\Knight.cs" />
+    <Compile Include="GameEntities\Pawn.cs" />
+    <Compile Include="GameEntities\PieceColor.cs" />
+    <Compile Include="GameEntities\PieceValue.cs" />
+    <Compile Include="GameEntities\Player.cs" />
+    <Compile Include="GameEntities\Queen.cs" />
+    <Compile Include="GameEntities\Rook.cs" />
+    <Compile Include="GameEntities\Tile.cs" />
+    <Compile Include="PaginationComponent.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RootController.cs" />
+    <Compile Include="SearchbarComponent.cs" />
+    <Compile Include="Session.cs" />
+    <Compile Include="SomeDataController.cs" />
+    <Compile Include="Styles.cs" />
+    <Compile Include="WatchComponent.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\..\..\Projekt\examples\ACL.ES\ACL.ES.csproj">
+      <Project>{f87f4fdb-c193-4afe-96f6-a09179e55905}</Project>
+      <Name>ACL.ES</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>
