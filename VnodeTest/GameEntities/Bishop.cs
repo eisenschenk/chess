@@ -8,7 +8,7 @@ namespace VnodeTest.GameEntities
 {
     class Bishop : BasePiece
     {
-        public Bishop(ValueTuple<int, int> position, PieceColor color) : base(position, color)
+        public Bishop(int position, PieceColor color) : base(position, color)
         {
             Value = PieceValue.Bishop;
         }

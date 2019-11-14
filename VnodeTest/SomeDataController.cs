@@ -13,7 +13,7 @@ namespace VnodeTest
 
         public VNode Render()
         {
-            return Div();
+            GameboardController.Render();
         }
 
     }

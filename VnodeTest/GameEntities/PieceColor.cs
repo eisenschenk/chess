@@ -6,5 +6,5 @@ using System.Threading.Tasks;
 
 namespace VnodeTest.GameEntities
 {
-    public enum PieceColor { White, Black }
+    public enum PieceColor { White, Black, Zero }
 }

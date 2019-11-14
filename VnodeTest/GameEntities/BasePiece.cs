@@ -11,23 +11,30 @@ namespace VnodeTest.GameEntities
         public PieceColor Color { get; set; }
         public PieceValue Value { get; set; }
         public string Sprite { get; }
-        public ValueTuple<int, int> Position { get; set; }
-        public List<ValueTuple<int, int>> ValidMoves { get; set; }
+        public int Position { get; set; }
+        public ValueTuple<int, int> PositionXY => (Position % 8, Position / 8);
+        private List<ValueTuple<int, int>> ValidMovesXY { get; set; }
+        public List<int> ValidMoves => ConvertToOneD(ValidMovesXY);
 
-        public BasePiece(ValueTuple<int, int> position, PieceColor color)
+        public BasePiece(int position, PieceColor color)
         {
             Position = position;
             Color = color;
-            ValidMoves = GetValidMovements();
+            ValidMovesXY = GetValidMovements();
+        }
+
+        private List<int> ConvertToOneD(List<ValueTuple<int, int>> valuesXY)
+        {
+            return valuesXY.Select(x => x.Item1 % 8 + x.Item2 / 8).ToList();
         }
 
         public List<ValueTuple<int, int>> GetPotentialMovementLine(ValueTuple<int, int> direction, int distance = 8)
         {
             List<ValueTuple<int, int>> output = new List<(int, int)>();
-            var currentyCheckedPosition = Position;
+            var currentyCheckedPosition = PositionXY;
             while (distance > 0 && currentyCheckedPosition.Item1 < 8 && currentyCheckedPosition.Item2 < 8)
             {
-                if (Position != currentyCheckedPosition)
+                if (PositionXY != currentyCheckedPosition)
                     output.Add(currentyCheckedPosition);
                 currentyCheckedPosition.Item1 += direction.Item1;
                 currentyCheckedPosition.Item2 += direction.Item2;

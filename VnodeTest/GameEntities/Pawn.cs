@@ -12,7 +12,7 @@ namespace VnodeTest.GameEntities
         public Pawn(ValueTuple<int, int> position, int positionY, PieceColor color) : base(position, color)
         {
             Value = PieceValue.Pawn;
-            StartPosition = Position;
+            StartPosition = PositionXY;
         }
 
         public override List<ValueTuple<int, int>> GetValidMovements()
@@ -20,11 +20,11 @@ namespace VnodeTest.GameEntities
             List<ValueTuple<int, int>> output = new List<(int, int)>();
             if (StartPosition.Item2 > 1)
             {
-                if (StartPosition == Position)
+                if (StartPosition == PositionXY)
                     return GetStraightLines(2).Where(x => x.Item2 > 1).ToList();
                 return GetStraightLines(1).Where(x => x.Item2 > 1).ToList();
             }
-            if (StartPosition == Position)
+            if (StartPosition == PositionXY)
                 return GetStraightLines(2).Where(x => x.Item2 < 64).ToList();
             return GetStraightLines(1).Where(x => x.Item2 < 64).ToList();
         }

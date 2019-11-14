@@ -8,6 +8,12 @@ namespace VnodeTest.GameEntities
 {
     public class Gameboard
     {
-        public BasePiece[,] Board = new BasePiece[8,8];
+        public Tile[] Board = new Tile[64];
+
+        public Gameboard()
+        {
+            for (int index = 0; index < 64; index++)
+                    Board[index] = new Tile(index);
+        }
     }
 }
