@@ -8,5 +8,11 @@ namespace VnodeTest.GameEntities
 {
     class Queen: BasePiece
     {
+        public Queen(ValueTuple<int,int> position, PieceColor color) : base(position,color){}
+
+        public override List<ValueTuple<int, int>> GetValidMovements()
+        {
+            return GetDiagonals().Concat(GetStraightLines()).ToList();
+        }
     }
 }

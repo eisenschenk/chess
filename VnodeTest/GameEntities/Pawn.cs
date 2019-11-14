@@ -9,30 +9,24 @@ namespace VnodeTest.GameEntities
     class Pawn : BasePiece
     {
         private ValueTuple<int, int> StartPosition;
-        public Pawn(int positionX, int positionY, PieceColor color) : base(positionX, positionY, color)
+        public Pawn(ValueTuple<int, int> position, int positionY, PieceColor color) : base(position, color)
         {
             Value = PieceValue.Pawn;
             StartPosition = Position;
         }
 
-        public override bool NotBlocked(ValueTuple<int, int> target, Gameboard gameboard)
+        public override List<ValueTuple<int, int>> GetValidMovements()
         {
-
-        }
-
-        public override int[] GetValidMovements()
-        {
-            //if (Position == StartPosition)
-            //{
-            //    if (StartPosition < 16)
-            //        return new int[] { Position + 8, Position + 16 };
-            //    return new int[] { Position - 8, Position - 16 };
-            //}
-            //if (Position < 56 && Position > 7)
-            //    if (Position < StartPosition)
-            //        return new int[] { Position - 8 };
-            //    else return new int[] { Position + 8 };
-            //return null;
+            List<ValueTuple<int, int>> output = new List<(int, int)>();
+            if (StartPosition.Item2 > 1)
+            {
+                if (StartPosition == Position)
+                    return GetStraightLines(2).Where(x => x.Item2 > 1).ToList();
+                return GetStraightLines(1).Where(x => x.Item2 > 1).ToList();
+            }
+            if (StartPosition == Position)
+                return GetStraightLines(2).Where(x => x.Item2 < 64).ToList();
+            return GetStraightLines(1).Where(x => x.Item2 < 64).ToList();
         }
     }
 }

@@ -8,7 +8,7 @@ namespace VnodeTest.GameEntities
 {
     class Bishop : BasePiece
     {
-        public Bishop(int positionX, int positionY, PieceColor color) : base(positionX, positionY, color)
+        public Bishop(ValueTuple<int, int> position, PieceColor color) : base(position, color)
         {
             Value = PieceValue.Bishop;
         }
@@ -16,11 +16,6 @@ namespace VnodeTest.GameEntities
         public override List<ValueTuple<int, int>> GetValidMovements()
         {
             return GetDiagonals();
-        }
-
-        public override bool NotBlocked(ValueTuple<int, int> target, Gameboard gameboard)
-        {
-
         }
     }
 }
