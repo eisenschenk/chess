@@ -16,7 +16,7 @@ namespace VnodeTest.GameEntities
         //TODO
         public override List<int> GetValidMovements(Gameboard gameboard)
         {
-            return ConvertToOneD(GetStraightLines(gameboard));
+            return GetStraightLines(gameboard);
         }
     }
 }

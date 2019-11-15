@@ -22,23 +22,23 @@ namespace VnodeTest.GameEntities
 
         public List<int> ConvertToOneD(List<ValueTuple<int, int>> valuesXY)
         {
-            return valuesXY.Select(x => x.Item1 % 8 + x.Item2 / 8).ToList();
+            return valuesXY.Select(x => x.Item1 + x.Item2 * 8).ToList();
         }
         public int ConvertToOneD(ValueTuple<int, int> valueXY)
         {
-            return valueXY.Item1 % 8 + valueXY.Item2 / 8;
+            return valueXY.Item1 + valueXY.Item2 * 8;
         }
 
-        public List<ValueTuple<int, int>> GetPotentialMovement(ValueTuple<int, int> direction, GameEntities.Gameboard gameboard, int distance = 7)
+        public List<ValueTuple<int, int>> GetPotentialMovement(ValueTuple<int, int> direction, Gameboard gameboard, int distance = 7)
         {
             List<ValueTuple<int, int>> output = new List<(int, int)>();
             var currentyCheckedPosition = (PositionXY.Item1 + direction.Item1, PositionXY.Item2 + direction.Item2);
             while (distance > 0 && currentyCheckedPosition.Item1 < 8 && currentyCheckedPosition.Item2 < 8)
             {
-                if (gameboard.Board[ConvertToOneD(currentyCheckedPosition)]?.Piece.Color == Color)
+                if (gameboard.Board[ConvertToOneD(currentyCheckedPosition)].Piece != null && gameboard.Board[ConvertToOneD(currentyCheckedPosition)].Piece.Color == Color)
                     return output;
                 output.Add(currentyCheckedPosition);
-                if (gameboard.Board[ConvertToOneD(currentyCheckedPosition)]?.Piece.Position == Position)
+                if (gameboard.Board[ConvertToOneD(currentyCheckedPosition)].Piece != null && gameboard.Board[ConvertToOneD(currentyCheckedPosition)].Piece.Position == Position)
                     return output;
                 currentyCheckedPosition.Item1 += direction.Item1;
                 currentyCheckedPosition.Item2 += direction.Item2;
@@ -47,23 +47,23 @@ namespace VnodeTest.GameEntities
             return output;
         }
 
-        public List<ValueTuple<int, int>> GetDiagonals(Gameboard gameboard, int distance = 7)
+        public List<int> GetDiagonals(Gameboard gameboard, int distance = 7)
         {
             var diagonals = new List<ValueTuple<int, int>>();
             for (int directionX = -1; directionX < 2; directionX += 2)
                 for (int directionY = -1; directionY < 2; directionY += 2)
                     diagonals.Concat(GetPotentialMovement((directionX, directionY), gameboard, distance));
-            return diagonals;
+            return ConvertToOneD(diagonals);
         }
 
-        public List<ValueTuple<int, int>> GetStraightLines(Gameboard gameboard, int distance = 8)
+        public List<int> GetStraightLines(Gameboard gameboard, int distance = 7)
         {
             var straightLines = new List<ValueTuple<int, int>>();
             for (int directionX = -1; directionX < 2; directionX += 2)
-                straightLines.Concat(GetPotentialMovement((directionX, 0), gameboard));
+                straightLines.AddRange(GetPotentialMovement((directionX, 0), gameboard, distance));
             for (int directionY = -1; directionY < 2; directionY += 2)
-                straightLines.Concat(GetPotentialMovement((0, directionY), gameboard, distance));
-            return straightLines;
+                straightLines.AddRange(GetPotentialMovement((0, directionY), gameboard, distance));
+            return ConvertToOneD(straightLines);
         }
 
         private string GetSprite()

@@ -59,6 +59,7 @@ namespace VnodeTest
             if (!start.Piece.GetValidMovements(GameBoard).Contains(target.Position))
                 return false;
             target.Piece = start.Piece;
+            target.Piece.Position = target.Position;
             start.Piece = null;
             return true;
         }
