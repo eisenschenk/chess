@@ -123,6 +123,21 @@ namespace VnodeTest
                 BackgroundColor("green")
             ),
 
+            Def(TileBase
+                , Width("4rem")
+                , Height("4rem")
+            ),
+
+            Def(TileBlack
+                , TileBase
+                , BackgroundColor("slategray")
+            ),
+
+             Def(TileWhite
+                , TileBase
+                , BackgroundColor("khaki")
+            ),
+
             Def(BorderedBox,
                 Padding("2px"),
                 BorderRadius(".25rem"),
@@ -302,6 +317,7 @@ namespace VnodeTest
             return Def("&:hover", BackgroundColor(color));
         }
 
+        public static readonly Style TileBase;
         public static readonly Style TileBlack;
         public static readonly Style TileWhite;
 

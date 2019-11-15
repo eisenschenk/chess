@@ -8,7 +8,7 @@ namespace VnodeTest.GameEntities
 {
     class Knight : BasePiece
     {
-        public Knight(ValueTuple<int, int> position, PieceColor color) : base(position, color) { }
+        public Knight(int position, PieceColor color) : base(position, color) { }
 
         public override List<(int, int)> GetValidMovements()
         {

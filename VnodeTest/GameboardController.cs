@@ -10,29 +10,29 @@ namespace VnodeTest
 {
     public class GameboardController
     {
-        public GameEntities.Gameboard Board;
+        public GameEntities.Gameboard GameBoard;
         public GameboardController()
         {
-            Board = new GameEntities.Gameboard();
+            GameBoard = new GameEntities.Gameboard();
         }
 
-        public static VNode Render()
+        public VNode Render()
         {
             return Div(
-                RenderTile(new GameEntities.Tile(1))
-                ); 
+                RenderBoard()
+                );
         }
 
         private VNode RenderBoard()
         {
-            return Div();
-            //for (int index = 0; index < 8; index++)
-            //    Fragment(Board.Board.Where(y => y.Index / 8 <= index).Select(y => RenderTile(y)));
+            return Fragment(
+                GameBoard.Board.Where(x => x.Position % 8 == 0).Select(s => Row(GameBoard.Board.Skip( s.Position / 8).Take(8).Select(t=>RenderTile(t))))
+            );
         }
         private static VNode RenderTile(GameEntities.Tile tile)
         {
             return Div(
-                tile.TileStyle,
+                tile.Style,
                 tile.ContainsPiece ? Text(tile.Piece.Sprite) : null
             );
         }

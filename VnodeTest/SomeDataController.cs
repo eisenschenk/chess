@@ -9,7 +9,7 @@ namespace VnodeTest
 {
     public class SomeDataController
     {
-
+        GameboardController GameboardController = new GameboardController();
 
         public VNode Render()
         {

@@ -8,7 +8,7 @@ namespace VnodeTest.GameEntities
 {
     class King : BasePiece
     {
-        public King(ValueTuple<int, int> position, PieceColor color) : base(position, color)
+        public King(int position, PieceColor color) : base(position, color)
         {
             Value = PieceValue.King;
         }

@@ -9,16 +9,18 @@ namespace VnodeTest.GameEntities
 {
     public class Tile
     {
-        public bool ContainsPiece { get; set; }
         public PieceColor Color { get; }
-        public Style TileStyle { get; set; }
+        public Style Style { get; }
         public BasePiece Piece { get; set; }
+        public bool ContainsPiece => Piece == null ? false : true;
         public int Index { get; }
+        public int Position { get; }
 
         public Tile(int index)
         {
-            Color = GetColor(index % 2);
-            TileStyle = GetStyle();
+            Position = index;
+            Color = GetColor();
+            Style = GetStyle();
         }
         private Style GetStyle()
         {
@@ -29,12 +31,21 @@ namespace VnodeTest.GameEntities
                 _ => Styles.TCwhite
             };
         }
-        private PieceColor GetColor(int color)
+
+        private PieceColor GetColor()
         {
-            return color switch
+            var rowEven = (Position / 8) % 2;
+            if (rowEven == 0)
+                return (Position % 2) switch
+                {
+                    0 => PieceColor.Black,
+                    1 => PieceColor.White,
+                    _ => PieceColor.Zero
+                };
+            return (Position % 2) switch
             {
-                0 => PieceColor.Black,
                 1 => PieceColor.White,
+                0 => PieceColor.Black,
                 _ => PieceColor.Zero
             };
         }

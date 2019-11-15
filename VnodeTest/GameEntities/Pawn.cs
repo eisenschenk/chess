@@ -9,7 +9,7 @@ namespace VnodeTest.GameEntities
     class Pawn : BasePiece
     {
         private ValueTuple<int, int> StartPosition;
-        public Pawn(ValueTuple<int, int> position, int positionY, PieceColor color) : base(position, color)
+        public Pawn(int position, PieceColor color) : base(position, color)
         {
             Value = PieceValue.Pawn;
             StartPosition = PositionXY;

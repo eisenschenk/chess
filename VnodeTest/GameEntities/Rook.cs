@@ -8,7 +8,7 @@ namespace VnodeTest.GameEntities
 {
     class Rook : BasePiece
     {
-        public Rook(ValueTuple<int, int> position, PieceColor color) : base(position, color)
+        public Rook(int position, PieceColor color) : base(position, color)
         {
             Value = PieceValue.Rook;
         }
