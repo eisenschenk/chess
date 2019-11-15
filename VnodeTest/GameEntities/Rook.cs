@@ -14,9 +14,9 @@ namespace VnodeTest.GameEntities
         }
 
         //TODO
-        public override List<ValueTuple<int, int>> GetValidMovements()
+        public override List<int> GetValidMovements(Gameboard gameboard)
         {
-            return GetStraightLines();
+            return ConvertToOneD(GetStraightLines(gameboard));
         }
     }
 }

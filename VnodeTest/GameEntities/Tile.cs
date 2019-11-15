@@ -11,6 +11,7 @@ namespace VnodeTest.GameEntities
     {
         public PieceColor Color { get; }
         public Style Style { get; }
+        public Style BorderStyle { get; }
         public BasePiece Piece { get; set; }
         public bool ContainsPiece => Piece == null ? false : true;
         public int Index { get; }
@@ -20,14 +21,26 @@ namespace VnodeTest.GameEntities
         {
             Position = index;
             Color = GetColor();
-            Style = GetStyle();
+            Style = GetBaseStyle();
+            BorderStyle = GetBorderStyle();
         }
-        private Style GetStyle()
+
+        private Style GetBaseStyle()
         {
             return Color switch
             {
                 PieceColor.Black => Styles.TileBlack,
                 PieceColor.White => Styles.TileWhite,
+                _ => Styles.TCwhite
+            };
+        }
+
+        private Style GetBorderStyle()
+        {
+            return Color switch
+            {
+                PieceColor.Black => Styles.BorderBlack,
+                PieceColor.White => Styles.BorderWhite,
                 _ => Styles.TCwhite
             };
         }
@@ -44,8 +57,8 @@ namespace VnodeTest.GameEntities
                 };
             return (Position % 2) switch
             {
-                1 => PieceColor.White,
-                0 => PieceColor.Black,
+                0 => PieceColor.White,
+                1 => PieceColor.Black,
                 _ => PieceColor.Zero
             };
         }

@@ -11,6 +11,8 @@ namespace VnodeTest
     public class GameboardController
     {
         public GameEntities.Gameboard GameBoard;
+        private VNode[] GameRows = new VNode[8];
+        private GameEntities.Tile Selected;
         public GameboardController()
         {
             GameBoard = new GameEntities.Gameboard();
@@ -25,16 +27,40 @@ namespace VnodeTest
 
         private VNode RenderBoard()
         {
-            return Fragment(
-                GameBoard.Board.Where(x => x.Position % 8 == 0).Select(s => Row(GameBoard.Board.Skip( s.Position / 8).Take(8).Select(t=>RenderTile(t))))
-            );
+
+            for (int indexRow = 0; indexRow < 8; indexRow++)
+                GameRows[indexRow] = Row(GameBoard.Board.Where(x => x.Position / 8 == indexRow).Select(t => RenderTile(t)));
+            return Fragment(GameRows.Select(x => x));
+
         }
-        private static VNode RenderTile(GameEntities.Tile tile)
+        private VNode RenderTile(GameEntities.Tile tile)
         {
-            return Div(
-                tile.Style,
-                tile.ContainsPiece ? Text(tile.Piece.Sprite) : null
+            var div = Div(
+                tile.Style & (tile == Selected ? Styles.Selected : tile.BorderStyle),
+                tile.ContainsPiece ? Text(tile.Piece.Sprite, Styles.FontSize3) : null
             );
+            div.OnClick = () => Select(tile);
+            return div;
+        }
+        private void Select(GameEntities.Tile tile)
+        {
+            if (Selected == null && tile.ContainsPiece)
+                Selected = tile;
+            else if (Selected == tile)
+                Selected = null;
+            else
+            {
+                TryMove(Selected, tile);
+                Selected = null;
+            }
+        }
+        private bool TryMove(GameEntities.Tile start, GameEntities.Tile target)
+        {
+            if (!start.Piece.GetValidMovements(GameBoard).Contains(target.Position))
+                return false;
+            target.Piece = start.Piece;
+            start.Piece = null;
+            return true;
         }
     }
 }

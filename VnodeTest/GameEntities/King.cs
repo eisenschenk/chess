@@ -13,22 +13,11 @@ namespace VnodeTest.GameEntities
             Value = PieceValue.King;
         }
 
-        //public override bool NotBlocked(ValueTuple<int, int> target, Gameboard gameboard)
-        //{
-        //    if (Checkmate())
-        //        return false;
-        //    return true;
-        //}
 
-        //TODO: currently placeholder
-        //private bool Checkmate()
-        //{
-        //    return false;
-        //}
 
-        public override List<ValueTuple<int, int>> GetValidMovements()
+        public override List<int> GetValidMovements(Gameboard gameboard)
         {
-            return GetDiagonals(1).Concat(GetStraightLines(1)).ToList();
+            return ConvertToOneD(GetDiagonals(gameboard, 1).Concat(GetStraightLines(gameboard,1)).ToList());
         }
     }
 }

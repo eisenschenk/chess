@@ -13,9 +13,10 @@ namespace VnodeTest.GameEntities
             Value = PieceValue.Bishop;
         }
 
-        public override List<ValueTuple<int, int>> GetValidMovements()
+        public override List<int> GetValidMovements(Gameboard gameboard)
         {
-            return GetDiagonals();
+            return ConvertToOneD(GetDiagonals(gameboard));
         }
+
     }
 }

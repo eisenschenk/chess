@@ -120,7 +120,15 @@ namespace VnodeTest
             ),
 
             Def(Selected,
-                BackgroundColor("green")
+                Border("2px dashed purple")
+            ),
+
+            Def(BorderBlack,
+                Border("2px solid slategray")
+            ),
+
+             Def(BorderWhite,
+                Border("2px solid khaki")
             ),
 
             Def(TileBase
@@ -320,6 +328,8 @@ namespace VnodeTest
         public static readonly Style TileBase;
         public static readonly Style TileBlack;
         public static readonly Style TileWhite;
+        public static readonly Style BorderBlack;
+        public static readonly Style BorderWhite;
 
 
         public static readonly Style Absolute;
