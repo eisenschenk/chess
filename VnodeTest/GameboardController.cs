@@ -8,11 +8,14 @@ using static ACL.UI.React.DOM;
 
 namespace VnodeTest
 {
+    //TODO turn change between black and white
+    //
     public class GameboardController
     {
         public GameEntities.Gameboard GameBoard;
         private VNode[] GameRows = new VNode[8];
         private GameEntities.Tile Selected;
+        private bool Promotion;
         public GameboardController()
         {
             GameBoard = new GameEntities.Gameboard();
@@ -21,8 +24,9 @@ namespace VnodeTest
         public VNode Render()
         {
             return Div(
-                RenderBoard()
-                );
+                RenderBoard(),
+                Promotion ? RenderPromotionSelection() : null
+            );
         }
 
         private VNode RenderBoard()
@@ -61,7 +65,31 @@ namespace VnodeTest
             target.Piece = start.Piece;
             target.Piece.Position = target.Position;
             start.Piece = null;
+            TryPromotePawn(target.Piece);
             return true;
         }
+        private void TryPromotePawn(GameEntities.BasePiece piece)
+        {
+            if (piece is GameEntities.Pawn && (piece.Position > 55 || piece.Position < 7))
+            {
+                Selected = null;
+                Promotion = true;
+                while (Promotion == true)
+                    if (Selected != null)
+                    {
+
+                        GameBoard.Board[piece.Position].Piece = Selected.Piece;
+                        Selected = null;
+                        Promotion = false;
+                    }
+            }
+        }
+        private VNode RenderPromotionSelection()
+        {
+            return Div(
+                     
+            );
+        }
+
     }
 }

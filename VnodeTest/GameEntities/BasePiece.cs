@@ -33,7 +33,11 @@ namespace VnodeTest.GameEntities
         {
             List<ValueTuple<int, int>> output = new List<(int, int)>();
             var currentyCheckedPosition = (PositionXY.Item1 + direction.Item1, PositionXY.Item2 + direction.Item2);
-            while (distance > 0 && currentyCheckedPosition.Item1 < 8 && currentyCheckedPosition.Item2 < 8)
+            while (distance > 0 
+                && currentyCheckedPosition.Item1 < 8 
+                && currentyCheckedPosition.Item1 >= 0 
+                && currentyCheckedPosition.Item2 < 8 
+                && currentyCheckedPosition.Item2 >= 0)
             {
                 if (gameboard.Board[ConvertToOneD(currentyCheckedPosition)].Piece != null && gameboard.Board[ConvertToOneD(currentyCheckedPosition)].Piece.Color == Color)
                     return output;
@@ -52,7 +56,7 @@ namespace VnodeTest.GameEntities
             var diagonals = new List<ValueTuple<int, int>>();
             for (int directionX = -1; directionX < 2; directionX += 2)
                 for (int directionY = -1; directionY < 2; directionY += 2)
-                    diagonals.Concat(GetPotentialMovement((directionX, directionY), gameboard, distance));
+                    diagonals.AddRange(GetPotentialMovement((directionX, directionY), gameboard, distance));
             return ConvertToOneD(diagonals);
         }
 

@@ -15,18 +15,31 @@ namespace VnodeTest.GameEntities
             StartPosition = Position;
         }
 
-        //TODO Pawn hits diagonal, not straight, implement block in case sth in front and enable kill via diagonals
+        //TODO: Promotion
         public override List<int> GetValidMovements(Gameboard gameboard)
         {
+            List<int> returnValues;
             if (StartPosition > 15)
             {
                 if (StartPosition == Position)
-                    return  GetStraightLines(gameboard, 2).Where(x => x < Position).ToList();
-                return GetStraightLines(gameboard,1).Where(x => x < Position).ToList();
+                    returnValues = GetStraightLines(gameboard, 2).Where(x => x < Position && gameboard.Board[x].ContainsPiece == false).ToList();
+                else
+                    returnValues = GetStraightLines(gameboard, 1).Where(x => x < Position && gameboard.Board[x].ContainsPiece == false).ToList();
+
+                returnValues.AddRange(GetDiagonals(gameboard, 1)
+                    .Where(x => x < Position && gameboard.Board[x].ContainsPiece == true && gameboard.Board[x].Piece.Color != Color).ToList());
             }
-            if (StartPosition == Position)
-                return GetStraightLines(gameboard,2).Where(x => x > Position).ToList();
-            return GetStraightLines(gameboard,1).Where(x => x > Position).ToList();
+            else
+            {
+                if (StartPosition == Position)
+                    returnValues = GetStraightLines(gameboard, 2).Where(x => x > Position && gameboard.Board[x].ContainsPiece == false).ToList();
+                else
+                    returnValues = GetStraightLines(gameboard, 1).Where(x => x > Position && gameboard.Board[x].ContainsPiece == false).ToList();
+
+                returnValues.AddRange(GetDiagonals(gameboard, 1)
+                    .Where(x => x > Position && gameboard.Board[x].ContainsPiece == true && gameboard.Board[x].Piece.Color != Color).ToList());
+            }
+            return returnValues;
         }
     }
 }
