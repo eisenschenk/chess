@@ -16,6 +16,10 @@ namespace VnodeTest.GameEntities
                 Board[index] = new Tile(index);
             PutPiecesInStartingPosition();
         }
+        public Gameboard(IEnumerable <Tile> collection)
+        {
+            Board = collection.ToArray();
+        }
 
         private void PutPiecesInStartingPosition()
         {
@@ -50,5 +54,7 @@ namespace VnodeTest.GameEntities
             Board[62].Piece = new Knight(62, PieceColor.Black);
             Board[63].Piece = new Rook(63, PieceColor.Black);
         }
+
+        public Gameboard Copy() => new Gameboard(this.Board.Select(t => t.Copy()));
     }
 }

@@ -19,5 +19,6 @@ namespace VnodeTest.GameEntities
         {
             return GetDiagonals(gameboard, 1).Concat(GetStraightLines(gameboard,1)).ToList();
         }
+        public override BasePiece Copy() => new King(this.Position, this.Color);
     }
 }

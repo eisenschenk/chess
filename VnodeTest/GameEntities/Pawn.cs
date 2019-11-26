@@ -18,28 +18,22 @@ namespace VnodeTest.GameEntities
         //TODO: Promotion
         public override List<int> GetValidMovements(Gameboard gameboard)
         {
+            int possibleMove = (StartPosition == Position) ? 2 : 1;
+            Func<int,bool> enemyPiece = position => gameboard.Board[position].ContainsPiece == true && gameboard.Board[position].Piece.Color != Color;
             List<int> returnValues;
             if (StartPosition > 15)
             {
-                if (StartPosition == Position)
-                    returnValues = GetStraightLines(gameboard, 2).Where(x => x < Position && gameboard.Board[x].ContainsPiece == false).ToList();
-                else
-                    returnValues = GetStraightLines(gameboard, 1).Where(x => x < Position && gameboard.Board[x].ContainsPiece == false).ToList();
-
-                returnValues.AddRange(GetDiagonals(gameboard, 1)
-                    .Where(x => x < Position && gameboard.Board[x].ContainsPiece == true && gameboard.Board[x].Piece.Color != Color).ToList());
+                returnValues = GetStraightLines(gameboard, possibleMove).Where(x => x < Position - 7 && gameboard.Board[x].ContainsPiece == false).ToList();
+                returnValues.AddRange(GetDiagonals(gameboard, 1).Where(x => x < Position && enemyPiece(x)).ToList());
             }
             else
             {
-                if (StartPosition == Position)
-                    returnValues = GetStraightLines(gameboard, 2).Where(x => x > Position && gameboard.Board[x].ContainsPiece == false).ToList();
-                else
-                    returnValues = GetStraightLines(gameboard, 1).Where(x => x > Position && gameboard.Board[x].ContainsPiece == false).ToList();
-
-                returnValues.AddRange(GetDiagonals(gameboard, 1)
-                    .Where(x => x > Position && gameboard.Board[x].ContainsPiece == true && gameboard.Board[x].Piece.Color != Color).ToList());
+                returnValues = GetStraightLines(gameboard, possibleMove).Where(x => x > Position + 7 && gameboard.Board[x].ContainsPiece == false).ToList();
+                returnValues.AddRange(GetDiagonals(gameboard, 1).Where(x => x > Position && enemyPiece(x)).ToList());
             }
             return returnValues;
         }
+
+        public override BasePiece Copy() => new Pawn(this.Position, this.Color);
     }
 }

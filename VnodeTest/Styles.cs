@@ -50,7 +50,7 @@ namespace VnodeTest
             ),
 
             Def(M2,
-                Margin("2px")
+                Margin("2rem")
             ),
 
             Def(Ml6,
@@ -63,8 +63,13 @@ namespace VnodeTest
             ),
 
             Def(MY2,
-                MarginTop("2px"),
-                MarginBottom("2px")
+                MarginTop("2rem"),
+                MarginBottom("2rem")
+            ),
+
+             Def(MY6,
+                MarginTop("6rem"),
+                MarginBottom("6rem")
             ),
 
             Def(MR2,
@@ -299,7 +304,11 @@ namespace VnodeTest
                 Width("8rem")
             ),
 
-            Def(FontSize3,
+            Def(FontSize1p5,
+                FontSize("1.5rem")
+            ),
+
+             Def(FontSize3,
                 FontSize("3rem")
             ),
 
@@ -343,6 +352,7 @@ namespace VnodeTest
         public static readonly Style TCwhite;
         public static readonly Style TCgreen;
 
+        public static readonly Style FontSize1p5;
         public static readonly Style FontSize3;
 
         public static readonly Style H6;
@@ -351,6 +361,7 @@ namespace VnodeTest
         public static readonly Style Ml6;
         public static readonly Style MX2;
         public static readonly Style MY2;
+        public static readonly Style MY6;
         public static readonly Style MR2;
         public static readonly Style ML2;
         public static readonly Style MT2;

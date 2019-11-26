@@ -33,23 +33,30 @@ namespace VnodeTest.GameEntities
         {
             List<ValueTuple<int, int>> output = new List<(int, int)>();
             var currentyCheckedPosition = (PositionXY.Item1 + direction.Item1, PositionXY.Item2 + direction.Item2);
-            while (distance > 0 
-                && currentyCheckedPosition.Item1 < 8 
-                && currentyCheckedPosition.Item1 >= 0 
-                && currentyCheckedPosition.Item2 < 8 
+            while (distance > 0
+                && currentyCheckedPosition.Item1 < 8
+                && currentyCheckedPosition.Item1 >= 0
+                && currentyCheckedPosition.Item2 < 8
                 && currentyCheckedPosition.Item2 >= 0)
             {
-                if (gameboard.Board[ConvertToOneD(currentyCheckedPosition)].Piece != null && gameboard.Board[ConvertToOneD(currentyCheckedPosition)].Piece.Color == Color)
+                var notNull = gameboard.Board[ConvertToOneD(currentyCheckedPosition)].Piece != null;
+
+                if (notNull && gameboard.Board[ConvertToOneD(currentyCheckedPosition)].Piece.Color == Color)
                     return output;
+
                 output.Add(currentyCheckedPosition);
-                if (gameboard.Board[ConvertToOneD(currentyCheckedPosition)].Piece != null && gameboard.Board[ConvertToOneD(currentyCheckedPosition)].Piece.Position == Position)
+
+                if (notNull && gameboard.Board[ConvertToOneD(currentyCheckedPosition)].Piece.Color != Color)
                     return output;
+
                 currentyCheckedPosition.Item1 += direction.Item1;
                 currentyCheckedPosition.Item2 += direction.Item2;
                 distance--;
             }
             return output;
         }
+
+        public abstract BasePiece Copy();
 
         public List<int> GetDiagonals(Gameboard gameboard, int distance = 7)
         {
@@ -98,6 +105,5 @@ namespace VnodeTest.GameEntities
 
         public abstract List<int> GetValidMovements(Gameboard gameboard);
 
-        //public abstract bool NotBlocked(int target, Gameboard gameboard);
     }
 }

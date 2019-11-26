@@ -18,5 +18,7 @@ namespace VnodeTest.GameEntities
         {
             return GetStraightLines(gameboard);
         }
+
+        public override BasePiece Copy() => new Rook(this.Position, this.Color);
     }
 }

@@ -6,16 +6,19 @@ using System.Threading.Tasks;
 
 namespace VnodeTest.GameEntities
 {
-    class Queen: BasePiece
+    class Queen : BasePiece
     {
-        public Queen(int position, PieceColor color) : base(position,color)
+        public Queen(int position, PieceColor color) : base(position, color)
         {
             Value = PieceValue.Queen;
         }
 
         public override List<int> GetValidMovements(Gameboard gameboard)
         {
-            return GetDiagonals(gameboard).Concat(GetStraightLines(gameboard)).ToList();
+            var output = GetDiagonals(gameboard).Concat(GetStraightLines(gameboard));
+            return output.ToList();
         }
+
+        public override BasePiece Copy() => new Queen(this.Position, this.Color);
     }
 }

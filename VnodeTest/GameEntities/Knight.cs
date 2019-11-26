@@ -35,5 +35,7 @@ namespace VnodeTest.GameEntities
 
             return ConvertToOneD(returnValues);
         }
+
+        public override BasePiece Copy() => new Knight(this.Position, this.Color);
     }
 }
