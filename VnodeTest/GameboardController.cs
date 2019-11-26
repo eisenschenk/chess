@@ -80,26 +80,18 @@ namespace VnodeTest
                 {
                     GameBoard.Board[Selected.Position - 2] = Selected;
                     GameBoard.Board[Selected.Position - 1] = target;
-                    Selected = null;
                 }
-                GameBoard.Board[Selected.Position + 2] = Selected;
-                GameBoard.Board[Selected.Position + 1] = target;
+                else
+                {
+                    GameBoard.Board[Selected.Position + 2] = Selected;
+                    GameBoard.Board[Selected.Position + 1] = target;
+                }
+                GameBoard.Board[Selected.Position] = null;
+                GameBoard.Board[target.Position] = null;
                 Selected = null;
-
+                return true;
             }
-
-            //public bool TryCastling(Gameboard gameboard, int currentTarget)
-            //{
-            //    var target = gameboard.Board[currentTarget].Piece;
-            //    if ((target is King && this is Rook)
-            //        || (target is Rook && this is King)
-            //        && target.Position == target.StartPosition
-            //        && Position == StartPosition)
-            //    {
-
-            //    }
-
-            //}
+            return false;
         }
 
         private bool TryMove(GameEntities.Tile start, GameEntities.Tile target)
