@@ -8,11 +8,10 @@ namespace VnodeTest.GameEntities
 {
     class Pawn : BasePiece
     {
-        private int StartPosition;
+       
         public Pawn(int position, PieceColor color) : base(position, color)
         {
             Value = PieceValue.Pawn;
-            StartPosition = Position;
         }
 
         //TODO: Promotion

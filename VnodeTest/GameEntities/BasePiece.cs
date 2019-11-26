@@ -13,10 +13,12 @@ namespace VnodeTest.GameEntities
         public string Sprite => GetSprite();
         public int Position { get; set; }
         public ValueTuple<int, int> PositionXY => (Position % 8, Position / 8);
+        public int StartPosition { get; }
 
         public BasePiece(int position, PieceColor color)
         {
             Position = position;
+            StartPosition = position;
             Color = color;
         }
 
@@ -32,29 +34,34 @@ namespace VnodeTest.GameEntities
         public List<ValueTuple<int, int>> GetPotentialMovement(ValueTuple<int, int> direction, Gameboard gameboard, int distance = 7)
         {
             List<ValueTuple<int, int>> output = new List<(int, int)>();
-            var currentyCheckedPosition = (PositionXY.Item1 + direction.Item1, PositionXY.Item2 + direction.Item2);
+            var currentTarget = (PositionXY.Item1 + direction.Item1, PositionXY.Item2 + direction.Item2);
+
             while (distance > 0
-                && currentyCheckedPosition.Item1 < 8
-                && currentyCheckedPosition.Item1 >= 0
-                && currentyCheckedPosition.Item2 < 8
-                && currentyCheckedPosition.Item2 >= 0)
+                && currentTarget.Item1 < 8
+                && currentTarget.Item1 >= 0
+                && currentTarget.Item2 < 8
+                && currentTarget.Item2 >= 0)
             {
-                var notNull = gameboard.Board[ConvertToOneD(currentyCheckedPosition)].Piece != null;
+                var notNull = gameboard.Board[ConvertToOneD(currentTarget)].Piece != null;
+                var currentTargetColor = gameboard.Board[ConvertToOneD(currentTarget)].Piece.Color;
+                if (notNull && currentTargetColor == Color)
+                {
+                    //if (TryCastling(gameboard, ConvertToOneD(currentTarget)))
+                    //    output.Add(currentTarget);
+                    return output;
+                }
+                output.Add(currentTarget);
 
-                if (notNull && gameboard.Board[ConvertToOneD(currentyCheckedPosition)].Piece.Color == Color)
+                if (notNull && currentTargetColor != Color)
                     return output;
 
-                output.Add(currentyCheckedPosition);
-
-                if (notNull && gameboard.Board[ConvertToOneD(currentyCheckedPosition)].Piece.Color != Color)
-                    return output;
-
-                currentyCheckedPosition.Item1 += direction.Item1;
-                currentyCheckedPosition.Item2 += direction.Item2;
+                currentTarget.Item1 += direction.Item1;
+                currentTarget.Item2 += direction.Item2;
                 distance--;
             }
             return output;
         }
+
 
         public abstract BasePiece Copy();
 
