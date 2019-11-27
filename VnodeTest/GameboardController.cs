@@ -50,7 +50,29 @@ namespace VnodeTest
 
         private VNode RenderGameOver()
         {
-            return Div();
+            string winner;
+            switch (CurrentPlayerColor)
+            {
+                case GameEntities.PieceColor.Black: winner = "White"; break;
+                case GameEntities.PieceColor.White: winner = "Black"; break;
+                case GameEntities.PieceColor.Zero: winner = "error"; break;
+                default: winner = "error"; break;
+            }
+            return Text($"Gameover! {winner} won");
+        }
+
+        private VNode RenderPromotionSelection()
+        {
+            List<GameEntities.Tile> promotionSelect = new List<GameEntities.Tile>();
+            promotionSelect.Add(new GameEntities.Tile(new GameEntities.Rook(0, Selected.Piece.Color), 0));
+            promotionSelect.Add(new GameEntities.Tile(new GameEntities.Knight(1, Selected.Piece.Color), 1));
+            promotionSelect.Add(new GameEntities.Tile(new GameEntities.Bishop(2, Selected.Piece.Color), 2));
+            promotionSelect.Add(new GameEntities.Tile(new GameEntities.Queen(3, Selected.Piece.Color), 3));
+            return Div(
+                Styles.M2,
+                Text($"Select Piece you want the Pawn to be promoted to.", Styles.FontSize1p5),
+                Row(Fragment(promotionSelect.Select(x => RenderTile(x))))
+            );
         }
 
         private void Select(GameEntities.Tile tile)
@@ -68,33 +90,35 @@ namespace VnodeTest
             else if (Selected == tile)
                 Selected = null;
             else if (Selected != null)
-            {
-                TryCastling(tile);
-                TryMove(Selected, tile);
-            }
+                if (TryMove(Selected, tile))
+                {
+                    TryEnablePromotion(tile);
+                    ChangeCurrentPlayer();
+                    CheckForGameOver();
+                }
         }
 
-        private bool TryCastling(GameEntities.Tile target)
+        private bool TryCastling(GameEntities.Tile start, GameEntities.Tile target)
         {
             if (target.ContainsPiece)
-                if (target.Piece is GameEntities.Rook && Selected.Piece is GameEntities.King
-                && !target.Piece.HasMoved && !Selected.Piece.HasMoved
-                && Selected.Piece.Color == target.Piece.Color
+                if (target.Piece is GameEntities.Rook && start.Piece is GameEntities.King
+                && !target.Piece.HasMoved && !start.Piece.HasMoved
+                && start.Piece.Color == target.Piece.Color
                 && target.Piece.Position == target.Piece.StartPosition
-                && Selected.Piece.Position == Selected.Piece.StartPosition
-                && (target.Piece.GetStraightLines(GameBoard).Contains(Selected.Piece.Position + 1)
-                || target.Piece.GetStraightLines(GameBoard).Contains(Selected.Piece.Position - 1)))
+                && start.Piece.Position == start.Piece.StartPosition
+                && (target.Piece.GetStraightLines(GameBoard).Contains(start.Piece.Position + 1)
+                || target.Piece.GetStraightLines(GameBoard).Contains(start.Piece.Position - 1)))
                 {
                     int direction = 1;
-                    if (Selected.Piece.Position > target.Piece.Position)
+                    if (start.Piece.Position > target.Piece.Position)
                         direction *= -1;
 
-                    GameBoard.Board[Selected.Position + 2 * direction].Piece = Selected.Piece;
-                    GameBoard.Board[Selected.Position + 2 * direction].Piece.Position = Selected.Position + 2 * direction;
-                    GameBoard.Board[Selected.Position + direction].Piece = target.Piece;
-                    GameBoard.Board[Selected.Position + direction].Piece.Position = Selected.Position + direction;
+                    GameBoard.Board[start.Position + 2 * direction].Piece = start.Piece;
+                    GameBoard.Board[start.Position + 2 * direction].Piece.Position = start.Position + 2 * direction;
+                    GameBoard.Board[start.Position + direction].Piece = target.Piece;
+                    GameBoard.Board[start.Position + direction].Piece.Position = start.Position + direction;
 
-                    GameBoard.Board[Selected.Position].Piece = null;
+                    GameBoard.Board[start.Position].Piece = null;
                     GameBoard.Board[target.Position].Piece = null;
                     Selected = null;
                     return true;
@@ -104,22 +128,39 @@ namespace VnodeTest
 
         private bool TryMove(GameEntities.Tile start, GameEntities.Tile target)
         {
-            if (Selected != null)
+            if (!TryCastling(start, target))
             {
                 if (!start.Piece.GetValidMovements(GameBoard).Contains(target.Position) || OwnKingIsCheckedAfterMove(start, target))
                     return false;
-                target.Piece = start.Piece;
-                target.Piece.Position = target.Position;
-                start.Piece = null;
+                MovePiece(start, target);
                 Selected = null;
-                TryEnablePromotion(target);
-                if (CurrentPlayerColor == GameEntities.PieceColor.White)
-                    CurrentPlayerColor = GameEntities.PieceColor.Black;
-                else
-                    CurrentPlayerColor = GameEntities.PieceColor.White;
                 return true;
             }
             return false;
+        }
+
+        private void CheckForGameOver()
+        {
+            foreach (GameEntities.Tile tile in GameBoard.Board.Where(t => t.ContainsPiece && t.Piece.Color == CurrentPlayerColor))
+                foreach (int potentialmove in tile.Piece.GetValidMovements(GameBoard))
+                    if (!OwnKingIsCheckedAfterMove(tile, GameBoard.Board[potentialmove]))
+                        return;
+            GameOver = true;
+        }
+
+        private void MovePiece(GameEntities.Tile start, GameEntities.Tile target)
+        {
+            target.Piece = start.Piece;
+            target.Piece.Position = target.Position;
+            start.Piece = null;
+        }
+
+        private void ChangeCurrentPlayer()
+        {
+            if (CurrentPlayerColor == GameEntities.PieceColor.White)
+                CurrentPlayerColor = GameEntities.PieceColor.Black;
+            else
+                CurrentPlayerColor = GameEntities.PieceColor.White;
         }
 
         private void TryEnablePromotion(GameEntities.Tile tile)
@@ -131,10 +172,10 @@ namespace VnodeTest
             }
         }
 
-        private bool OwnKingIsCheckedAfterMove(GameEntities.Tile s, GameEntities.Tile t)
+        private bool OwnKingIsCheckedAfterMove(GameEntities.Tile source, GameEntities.Tile targetTile)
         {
-            GameEntities.Tile start = s.Copy();
-            GameEntities.Tile target = t.Copy();
+            GameEntities.Tile start = source.Copy();
+            GameEntities.Tile target = targetTile.Copy();
             var futureGameBoard = GameBoard.Copy();
             var potentialmoves = new List<int>();
             futureGameBoard.Board[target.Position].Piece = start.Piece;
@@ -149,20 +190,6 @@ namespace VnodeTest
             if (potentialmoves.Contains(kingSameColorPosition))
                 return true;
             return false;
-        }
-
-        private VNode RenderPromotionSelection()
-        {
-            List<GameEntities.Tile> promotionSelect = new List<GameEntities.Tile>();
-            promotionSelect.Add(new GameEntities.Tile(new GameEntities.Rook(0, Selected.Piece.Color), 0));
-            promotionSelect.Add(new GameEntities.Tile(new GameEntities.Knight(1, Selected.Piece.Color), 1));
-            promotionSelect.Add(new GameEntities.Tile(new GameEntities.Bishop(2, Selected.Piece.Color), 2));
-            promotionSelect.Add(new GameEntities.Tile(new GameEntities.Queen(3, Selected.Piece.Color), 3));
-            return Div(
-                Styles.M2,
-                Text($"Select Piece you want the Pawn to be promoted to.", Styles.FontSize1p5),
-                Row(Fragment(promotionSelect.Select(x => RenderTile(x))))
-            );
         }
 
     }
