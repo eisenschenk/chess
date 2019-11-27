@@ -55,8 +55,9 @@ namespace VnodeTest.GameEntities
 
         private PieceColor GetColor()
         {
-            var rowEven = (Position / 8) % 2;
-            if (rowEven == 0)
+            //Boolsche algebra ^ = XOR
+            var rowEven = (Position / 8) % 2 == 0;
+            if (rowEven)
                 return (Position % 2) switch
                 {
                     0 => PieceColor.Black,
@@ -72,6 +73,6 @@ namespace VnodeTest.GameEntities
         }
 
         internal Tile Copy() => new Tile(Piece?.Copy(), Position);
-    
+
     }
 }

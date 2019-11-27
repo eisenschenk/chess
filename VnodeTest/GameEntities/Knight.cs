@@ -29,7 +29,8 @@ namespace VnodeTest.GameEntities
             foreach (ValueTuple<int, int> item in returnValues.ToArray())
             {
                 if (item.Item1 < 0 || item.Item1 > 7 || item.Item2 < 0 || item.Item2 > 7 
-                    || gameboard.Board[ConvertToOneD(item)].ContainsPiece == true && gameboard.Board[ConvertToOneD(item)].Piece.Color == Color)
+                    || gameboard.Board[ConvertToOneD(item)].ContainsPiece == true 
+                    && gameboard.Board[ConvertToOneD(item)].Piece.Color == Color)
                     returnValues.Remove(item);
             }
 

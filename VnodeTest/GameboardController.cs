@@ -11,7 +11,6 @@ namespace VnodeTest
     public class GameboardController
     {
         public GameEntities.Gameboard GameBoard;
-        private VNode[] GameRows = new VNode[8];
         private GameEntities.Tile Selected;
         private bool Promotion;
         private bool GameOver;
@@ -30,22 +29,22 @@ namespace VnodeTest
                 Promotion ? RenderPromotionSelection() : RenderBoard(GameBoard)
             );
         }
-
+        //remember Enumerable range
         private VNode RenderBoard(GameEntities.Gameboard board)
         {
-            for (int indexRow = 0; indexRow < 8; indexRow++)
-                GameRows[indexRow] = Row(board.Board.Where(x => x.Position / 8 == indexRow).Select(t => RenderTile(t)));
-            return Fragment(GameRows.Select(x => x));
+            return Fragment(Enumerable.Range(0, 8)
+                .Select(rowx => Row(board.Board.Where(x => x.Position / 8 == rowx)
+                    .Select(t => RenderTile(t)))));
         }
 
+        //remember onclick
         private VNode RenderTile(GameEntities.Tile tile)
         {
-            var div = Div(
+            return Div(
                 tile.Style & (tile == Selected ? Styles.Selected : tile.BorderStyle),
+                () => Select(tile),
                 tile.ContainsPiece ? Text(tile.Piece.Sprite, Styles.FontSize3) : null
             );
-            div.OnClick = () => Select(tile);
-            return div;
         }
 
         private VNode RenderGameOver()
@@ -75,24 +74,25 @@ namespace VnodeTest
             );
         }
 
-        private void Select(GameEntities.Tile tile)
+        private void Select(GameEntities.Tile target)
         {
+            // eigener Select für Promotion bzw. RenderTile mit Onclick param
             if (Promotion == true)
             {
-                GameBoard.Board[Selected.Position].Piece = tile.Piece;
+                GameBoard.Board[Selected.Position].Piece = target.Piece;
                 GameBoard.Board[Selected.Position].Piece.Position = Selected.Position;
                 Selected = null;
                 Promotion = false;
                 return;
             }
-            if (Selected == null && tile.ContainsPiece && tile.Piece.Color == CurrentPlayerColor)
-                Selected = tile;
-            else if (Selected == tile)
+            if (Selected == null && target.ContainsPiece /*&& target.Piece.Color == CurrentPlayerColor*/)
+                Selected = target;
+            else if (Selected == target)
                 Selected = null;
             else if (Selected != null)
-                if (TryMove(Selected, tile))
+                if (TryMove(Selected, target))
                 {
-                    TryEnablePromotion(tile);
+                    TryEnablePromotion(target);
                     ChangeCurrentPlayer();
                     CheckForGameOver();
                 }
@@ -100,14 +100,13 @@ namespace VnodeTest
 
         private bool TryCastling(GameEntities.Tile start, GameEntities.Tile target)
         {
+            //some enemy piece might be standing next to the king, rooks potentialmoves dont prevent castling ...
             if (target.ContainsPiece)
                 if (target.Piece is GameEntities.Rook && start.Piece is GameEntities.King
                 && !target.Piece.HasMoved && !start.Piece.HasMoved
                 && start.Piece.Color == target.Piece.Color
-                && target.Piece.Position == target.Piece.StartPosition
-                && start.Piece.Position == start.Piece.StartPosition
                 && (target.Piece.GetStraightLines(GameBoard).Contains(start.Piece.Position + 1)
-                || target.Piece.GetStraightLines(GameBoard).Contains(start.Piece.Position - 1)))
+                    || target.Piece.GetStraightLines(GameBoard).Contains(start.Piece.Position - 1)))
                 {
                     int direction = 1;
                     if (start.Piece.Position > target.Piece.Position)
@@ -136,7 +135,7 @@ namespace VnodeTest
                 Selected = null;
                 return true;
             }
-            return false;
+            return true;
         }
 
         private void CheckForGameOver()
@@ -184,10 +183,8 @@ namespace VnodeTest
                 .Where(t => t.ContainsPiece && t.Piece.Color == start.Piece.Color && t.Piece is GameEntities.King)
                 .First().Piece.Position;
             var enemyPieces = futureGameBoard.Board.Where(x => x.ContainsPiece && x.Piece.Color != start.Piece.Color);
-            var potentialmoves = new List<int>();
-            foreach (GameEntities.Tile tile in enemyPieces)
-                potentialmoves.AddRange(tile.Piece.GetValidMovements(futureGameBoard));
-            if (potentialmoves.Contains(kingSameColorPosition))
+
+            if (enemyPieces.SelectMany(t => t.Piece.GetValidMovements(futureGameBoard)).Contains(kingSameColorPosition))
                 return true;
             return false;
         }

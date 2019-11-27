@@ -19,13 +19,16 @@ namespace VnodeTest.GameEntities
             int possibleMove = (StartPosition == Position) ? 2 : 1;
             Func<int,bool> enemyPiece = position => gameboard.Board[position].ContainsPiece == true && gameboard.Board[position].Piece.Color != Color;
             List<int> returnValues;
-            if (StartPosition > 15)
+            //color instead of magic numbers
+            if (Color == PieceColor.Black)
             {
+                //Position - 7 hack to prevent movement to the left/right
                 returnValues = GetStraightLines(gameboard, possibleMove).Where(x => x < Position - 7 && gameboard.Board[x].ContainsPiece == false).ToList();
                 returnValues.AddRange(GetDiagonals(gameboard, 1).Where(x => x < Position && enemyPiece(x)).ToList());
             }
             else
             {
+                //Position + 7 hack to prevent movement to the left/right
                 returnValues = GetStraightLines(gameboard, possibleMove).Where(x => x > Position + 7 && gameboard.Board[x].ContainsPiece == false).ToList();
                 returnValues.AddRange(GetDiagonals(gameboard, 1).Where(x => x > Position && enemyPiece(x)).ToList());
             }

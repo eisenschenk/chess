@@ -6,13 +6,15 @@ using System.Threading.Tasks;
 
 namespace VnodeTest.GameEntities
 {
+    //Ienumerables statt Listen für alles#
+    // protected statt public für vererbungen
     public abstract class BasePiece
     {
         public PieceColor Color { get; set; }
         public PieceValue Value { get; set; }
         public string Sprite => GetSprite();
-        public ValueTuple<int, int> PositionXY => (Position % 8, Position / 8);
-        public int StartPosition { get; }
+        public /*ValueTuple<int, int>*/ (int X, int Y) PositionXY => (Position % 8, Position / 8);
+        public int StartPosition { get; } //von color abh. 
         public bool HasMoved { get; private set; }
         private int _Position;
         public int Position
@@ -39,7 +41,7 @@ namespace VnodeTest.GameEntities
 
         public List<int> ConvertToOneD(List<ValueTuple<int, int>> valuesXY)
         {
-            return valuesXY.Select(x => x.Item1 + x.Item2 * 8).ToList();
+            return valuesXY.Select(ConvertToOneD).ToList();
         }
 
         public int ConvertToOneD(ValueTuple<int, int> valueXY)
@@ -49,7 +51,7 @@ namespace VnodeTest.GameEntities
 
         public List<int> GetDiagonals(Gameboard gameboard, int distance = 7)
         {
-            var diagonals = new List<ValueTuple<int, int>>();
+            var diagonals = new List<(int X, int Y)>();
             for (int directionX = -1; directionX < 2; directionX += 2)
                 for (int directionY = -1; directionY < 2; directionY += 2)
                     diagonals.AddRange(GetPotentialMoves((directionX, directionY), gameboard, distance));
@@ -58,24 +60,24 @@ namespace VnodeTest.GameEntities
 
         public List<int> GetStraightLines(Gameboard gameboard, int distance = 7)
         {
-            var straightLines = new List<ValueTuple<int, int>>();
+            var straightLines = new List<(int X, int Y)>();
             for (int directionX = -1; directionX < 2; directionX += 2)
                 straightLines.AddRange(GetPotentialMoves((directionX, 0), gameboard, distance));
             for (int directionY = -1; directionY < 2; directionY += 2)
                 straightLines.AddRange(GetPotentialMoves((0, directionY), gameboard, distance));
             return ConvertToOneD(straightLines);
         }
-
+        //distance -> -1 
         private List<ValueTuple<int, int>> GetPotentialMoves(ValueTuple<int, int> direction, Gameboard gameboard, int distance = 7)
         {
-            List<ValueTuple<int, int>> output = new List<(int, int)>();
-            var currentTarget = (PositionXY.Item1 + direction.Item1, PositionXY.Item2 + direction.Item2);
+            List<(int X, int Y)> output = new List<(int, int)>();
+            var currentTarget = (X: PositionXY.Item1 + direction.Item1, Y: PositionXY.Item2 + direction.Item2);
 
             while (distance > 0
-                && currentTarget.Item1 < 8
-                && currentTarget.Item1 >= 0
-                && currentTarget.Item2 < 8
-                && currentTarget.Item2 >= 0)
+                && currentTarget.X < 8
+                && currentTarget.X >= 0
+                && currentTarget.Y < 8
+                && currentTarget.Y >= 0)
             {
                 var notNull = gameboard.Board[ConvertToOneD(currentTarget)].Piece != null;
                 var currentTargetColor = gameboard.Board[ConvertToOneD(currentTarget)].Piece?.Color;
