@@ -9,7 +9,6 @@ using static ACL.UI.React.DOM;
 namespace VnodeTest
 {
     //TODO turn change between black and white, maybe show currently viable color to make next move
-    //TODO implement Castling
     //Game doesnt finish right now
     public class GameboardController
     {
@@ -17,6 +16,7 @@ namespace VnodeTest
         private VNode[] GameRows = new VNode[8];
         private GameEntities.Tile Selected;
         private bool Promotion;
+        private bool GameOver;
         public GameboardController()
         {
             GameBoard = new GameEntities.Gameboard();
@@ -69,41 +69,46 @@ namespace VnodeTest
 
         private bool TryCastling(GameEntities.Tile target)
         {
-            if (target.Piece is GameEntities.Rook && Selected.Piece is GameEntities.King
+            if (target.ContainsPiece)
+                if (target.Piece is GameEntities.Rook && Selected.Piece is GameEntities.King
+                && !target.Piece.HasMoved && !Selected.Piece.HasMoved
                 && Selected.Piece.Color == target.Piece.Color
                 && target.Piece.Position == target.Piece.StartPosition
                 && Selected.Piece.Position == Selected.Piece.StartPosition
-                && target.Piece.GetStraightLines(GameBoard).Contains(Selected.Piece.Position + 1)
-                || target.Piece.GetStraightLines(GameBoard).Contains(Selected.Piece.Position - 1))
-            {
-                if (Selected.Piece.Position > target.Piece.Position)
+                && (target.Piece.GetStraightLines(GameBoard).Contains(Selected.Piece.Position + 1)
+                || target.Piece.GetStraightLines(GameBoard).Contains(Selected.Piece.Position - 1)))
                 {
-                    GameBoard.Board[Selected.Position - 2] = Selected;
-                    GameBoard.Board[Selected.Position - 1] = target;
+                    int direction = 1;
+                    if (Selected.Piece.Position > target.Piece.Position)
+                        direction *= -1;
+
+                    GameBoard.Board[Selected.Position + 2 * direction].Piece = Selected.Piece;
+                    GameBoard.Board[Selected.Position + 2 * direction].Piece.Position = Selected.Position + 2 * direction;
+                    GameBoard.Board[Selected.Position + direction].Piece = target.Piece;
+                    GameBoard.Board[Selected.Position + direction].Piece.Position = Selected.Position + direction;
+
+                    GameBoard.Board[Selected.Position].Piece = null;
+                    GameBoard.Board[target.Position].Piece = null;
+                    Selected = null;
+                    return true;
                 }
-                else
-                {
-                    GameBoard.Board[Selected.Position + 2] = Selected;
-                    GameBoard.Board[Selected.Position + 1] = target;
-                }
-                GameBoard.Board[Selected.Position] = null;
-                GameBoard.Board[target.Position] = null;
-                Selected = null;
-                return true;
-            }
             return false;
         }
 
         private bool TryMove(GameEntities.Tile start, GameEntities.Tile target)
         {
-            if (!start.Piece.GetValidMovements(GameBoard).Contains(target.Position) || OwnKingIsCheckedAfterMove(start, target))
-                return false;
-            target.Piece = start.Piece;
-            target.Piece.Position = target.Position;
-            start.Piece = null;
-            Selected = null;
-            TryEnablePromotion(target);
-            return true;
+            if (Selected != null)
+            {
+                if (!start.Piece.GetValidMovements(GameBoard).Contains(target.Position) || OwnKingIsCheckedAfterMove(start, target))
+                    return false;
+                target.Piece = start.Piece;
+                target.Piece.Position = target.Position;
+                start.Piece = null;
+                Selected = null;
+                TryEnablePromotion(target);
+                return true;
+            }
+            return false;
         }
 
         private void TryEnablePromotion(GameEntities.Tile tile)

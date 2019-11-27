@@ -11,9 +11,24 @@ namespace VnodeTest.GameEntities
         public PieceColor Color { get; set; }
         public PieceValue Value { get; set; }
         public string Sprite => GetSprite();
-        public int Position { get; set; }
+        private int _Position;
+        public int Position
+        {
+            get
+            {
+                return _Position;
+            }
+            set
+            {
+                if (_Position != StartPosition)
+                    HasMoved = true;
+                _Position = value;
+
+            }
+        }
         public ValueTuple<int, int> PositionXY => (Position % 8, Position / 8);
         public int StartPosition { get; }
+        public bool HasMoved { get; private set; }
 
         public BasePiece(int position, PieceColor color)
         {
@@ -43,7 +58,7 @@ namespace VnodeTest.GameEntities
                 && currentTarget.Item2 >= 0)
             {
                 var notNull = gameboard.Board[ConvertToOneD(currentTarget)].Piece != null;
-                var currentTargetColor = gameboard.Board[ConvertToOneD(currentTarget)].Piece.Color;
+                var currentTargetColor = gameboard.Board[ConvertToOneD(currentTarget)].Piece?.Color;
                 if (notNull && currentTargetColor == Color)
                 {
                     //if (TryCastling(gameboard, ConvertToOneD(currentTarget)))
