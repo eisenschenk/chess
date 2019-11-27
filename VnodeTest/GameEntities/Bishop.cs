@@ -18,6 +18,6 @@ namespace VnodeTest.GameEntities
             return GetDiagonals(gameboard);
         }
 
-        public override BasePiece Copy() => new Bishop(this.Position, this.Color);
+        public override BasePiece Copy() => new Bishop(Position, Color);
     }
 }

@@ -33,6 +33,6 @@ namespace VnodeTest.GameEntities
             return returnValues;
         }
 
-        public override BasePiece Copy() => new Pawn(this.Position, this.Color);
+        public override BasePiece Copy() => new Pawn(Position, Color);
     }
 }

@@ -11,6 +11,9 @@ namespace VnodeTest.GameEntities
         public PieceColor Color { get; set; }
         public PieceValue Value { get; set; }
         public string Sprite => GetSprite();
+        public ValueTuple<int, int> PositionXY => (Position % 8, Position / 8);
+        public int StartPosition { get; }
+        public bool HasMoved { get; private set; }
         private int _Position;
         public int Position
         {
@@ -26,9 +29,6 @@ namespace VnodeTest.GameEntities
 
             }
         }
-        public ValueTuple<int, int> PositionXY => (Position % 8, Position / 8);
-        public int StartPosition { get; }
-        public bool HasMoved { get; private set; }
 
         public BasePiece(int position, PieceColor color)
         {
@@ -41,12 +41,13 @@ namespace VnodeTest.GameEntities
         {
             return valuesXY.Select(x => x.Item1 + x.Item2 * 8).ToList();
         }
+
         public int ConvertToOneD(ValueTuple<int, int> valueXY)
         {
             return valueXY.Item1 + valueXY.Item2 * 8;
         }
 
-        public List<ValueTuple<int, int>> GetPotentialMovement(ValueTuple<int, int> direction, Gameboard gameboard, int distance = 7)
+        private List<ValueTuple<int, int>> GetPotentialMoves(ValueTuple<int, int> direction, Gameboard gameboard, int distance = 7)
         {
             List<ValueTuple<int, int>> output = new List<(int, int)>();
             var currentTarget = (PositionXY.Item1 + direction.Item1, PositionXY.Item2 + direction.Item2);
@@ -60,11 +61,8 @@ namespace VnodeTest.GameEntities
                 var notNull = gameboard.Board[ConvertToOneD(currentTarget)].Piece != null;
                 var currentTargetColor = gameboard.Board[ConvertToOneD(currentTarget)].Piece?.Color;
                 if (notNull && currentTargetColor == Color)
-                {
-                    //if (TryCastling(gameboard, ConvertToOneD(currentTarget)))
-                    //    output.Add(currentTarget);
                     return output;
-                }
+
                 output.Add(currentTarget);
 
                 if (notNull && currentTargetColor != Color)
@@ -77,15 +75,12 @@ namespace VnodeTest.GameEntities
             return output;
         }
 
-
-        public abstract BasePiece Copy();
-
         public List<int> GetDiagonals(Gameboard gameboard, int distance = 7)
         {
             var diagonals = new List<ValueTuple<int, int>>();
             for (int directionX = -1; directionX < 2; directionX += 2)
                 for (int directionY = -1; directionY < 2; directionY += 2)
-                    diagonals.AddRange(GetPotentialMovement((directionX, directionY), gameboard, distance));
+                    diagonals.AddRange(GetPotentialMoves((directionX, directionY), gameboard, distance));
             return ConvertToOneD(diagonals);
         }
 
@@ -93,9 +88,9 @@ namespace VnodeTest.GameEntities
         {
             var straightLines = new List<ValueTuple<int, int>>();
             for (int directionX = -1; directionX < 2; directionX += 2)
-                straightLines.AddRange(GetPotentialMovement((directionX, 0), gameboard, distance));
+                straightLines.AddRange(GetPotentialMoves((directionX, 0), gameboard, distance));
             for (int directionY = -1; directionY < 2; directionY += 2)
-                straightLines.AddRange(GetPotentialMovement((0, directionY), gameboard, distance));
+                straightLines.AddRange(GetPotentialMoves((0, directionY), gameboard, distance));
             return ConvertToOneD(straightLines);
         }
 
@@ -122,10 +117,10 @@ namespace VnodeTest.GameEntities
                 PieceValue.Pawn => "\u265F",
                 _ => ""
             };
-
         }
 
-        public abstract List<int> GetValidMovements(Gameboard gameboard);
+        public abstract BasePiece Copy();
 
+        public abstract List<int> GetValidMovements(Gameboard gameboard);
     }
 }

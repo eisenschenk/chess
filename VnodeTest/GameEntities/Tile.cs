@@ -23,6 +23,7 @@ namespace VnodeTest.GameEntities
             Style = GetBaseStyle();
             BorderStyle = GetBorderStyle();
         }
+
         public Tile(BasePiece piece, int index)
         {
             Position = index;
@@ -70,7 +71,7 @@ namespace VnodeTest.GameEntities
             };
         }
 
-        internal Tile Copy() => new Tile(this.Piece?.Copy(), this.Position);
+        internal Tile Copy() => new Tile(Piece?.Copy(), Position);
     
     }
 }

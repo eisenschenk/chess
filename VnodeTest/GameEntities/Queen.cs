@@ -19,6 +19,6 @@ namespace VnodeTest.GameEntities
             return output.ToList();
         }
 
-        public override BasePiece Copy() => new Queen(this.Position, this.Color);
+        public override BasePiece Copy() => new Queen(Position, Color);
     }
 }

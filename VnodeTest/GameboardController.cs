@@ -8,7 +8,6 @@ using static ACL.UI.React.DOM;
 
 namespace VnodeTest
 {
-    //TODO turn change between black and white, maybe show currently viable color to make next move
     //Game doesnt finish right now
     public class GameboardController
     {
@@ -17,6 +16,7 @@ namespace VnodeTest
         private GameEntities.Tile Selected;
         private bool Promotion;
         private bool GameOver;
+        private GameEntities.PieceColor CurrentPlayerColor = GameEntities.PieceColor.White;
         public GameboardController()
         {
             GameBoard = new GameEntities.Gameboard();
@@ -24,6 +24,8 @@ namespace VnodeTest
 
         public VNode Render()
         {
+            if (GameOver)
+                return RenderGameOver();
             return Div(
                 Promotion ? RenderPromotionSelection() : RenderBoard(GameBoard)
             );
@@ -46,6 +48,11 @@ namespace VnodeTest
             return div;
         }
 
+        private VNode RenderGameOver()
+        {
+            return Div();
+        }
+
         private void Select(GameEntities.Tile tile)
         {
             if (Promotion == true)
@@ -56,7 +63,7 @@ namespace VnodeTest
                 Promotion = false;
                 return;
             }
-            if (Selected == null && tile.ContainsPiece)
+            if (Selected == null && tile.ContainsPiece && tile.Piece.Color == CurrentPlayerColor)
                 Selected = tile;
             else if (Selected == tile)
                 Selected = null;
@@ -106,6 +113,10 @@ namespace VnodeTest
                 start.Piece = null;
                 Selected = null;
                 TryEnablePromotion(target);
+                if (CurrentPlayerColor == GameEntities.PieceColor.White)
+                    CurrentPlayerColor = GameEntities.PieceColor.Black;
+                else
+                    CurrentPlayerColor = GameEntities.PieceColor.White;
                 return true;
             }
             return false;
