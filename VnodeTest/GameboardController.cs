@@ -8,7 +8,6 @@ using static ACL.UI.React.DOM;
 
 namespace VnodeTest
 {
-    //Game doesnt finish right now
     public class GameboardController
     {
         public GameEntities.Gameboard GameBoard;
@@ -17,6 +16,7 @@ namespace VnodeTest
         private bool Promotion;
         private bool GameOver;
         private GameEntities.PieceColor CurrentPlayerColor = GameEntities.PieceColor.White;
+
         public GameboardController()
         {
             GameBoard = new GameEntities.Gameboard();
@@ -177,7 +177,6 @@ namespace VnodeTest
             GameEntities.Tile start = source.Copy();
             GameEntities.Tile target = targetTile.Copy();
             var futureGameBoard = GameBoard.Copy();
-            var potentialmoves = new List<int>();
             futureGameBoard.Board[target.Position].Piece = start.Piece;
             futureGameBoard.Board[target.Position].Piece.Position = target.Position;
             futureGameBoard.Board[start.Position].Piece = null;
@@ -185,6 +184,7 @@ namespace VnodeTest
                 .Where(t => t.ContainsPiece && t.Piece.Color == start.Piece.Color && t.Piece is GameEntities.King)
                 .First().Piece.Position;
             var enemyPieces = futureGameBoard.Board.Where(x => x.ContainsPiece && x.Piece.Color != start.Piece.Color);
+            var potentialmoves = new List<int>();
             foreach (GameEntities.Tile tile in enemyPieces)
                 potentialmoves.AddRange(tile.Piece.GetValidMovements(futureGameBoard));
             if (potentialmoves.Contains(kingSameColorPosition))

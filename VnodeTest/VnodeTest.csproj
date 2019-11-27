@@ -68,7 +68,6 @@
     <Compile Include="GameEntities\Pawn.cs" />
     <Compile Include="GameEntities\PieceColor.cs" />
     <Compile Include="GameEntities\PieceValue.cs" />
-    <Compile Include="GameEntities\Player.cs" />
     <Compile Include="GameEntities\Queen.cs" />
     <Compile Include="GameEntities\Rook.cs" />
     <Compile Include="GameEntities\Tile.cs" />

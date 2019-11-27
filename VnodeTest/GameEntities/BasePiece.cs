@@ -47,6 +47,25 @@ namespace VnodeTest.GameEntities
             return valueXY.Item1 + valueXY.Item2 * 8;
         }
 
+        public List<int> GetDiagonals(Gameboard gameboard, int distance = 7)
+        {
+            var diagonals = new List<ValueTuple<int, int>>();
+            for (int directionX = -1; directionX < 2; directionX += 2)
+                for (int directionY = -1; directionY < 2; directionY += 2)
+                    diagonals.AddRange(GetPotentialMoves((directionX, directionY), gameboard, distance));
+            return ConvertToOneD(diagonals);
+        }
+
+        public List<int> GetStraightLines(Gameboard gameboard, int distance = 7)
+        {
+            var straightLines = new List<ValueTuple<int, int>>();
+            for (int directionX = -1; directionX < 2; directionX += 2)
+                straightLines.AddRange(GetPotentialMoves((directionX, 0), gameboard, distance));
+            for (int directionY = -1; directionY < 2; directionY += 2)
+                straightLines.AddRange(GetPotentialMoves((0, directionY), gameboard, distance));
+            return ConvertToOneD(straightLines);
+        }
+
         private List<ValueTuple<int, int>> GetPotentialMoves(ValueTuple<int, int> direction, Gameboard gameboard, int distance = 7)
         {
             List<ValueTuple<int, int>> output = new List<(int, int)>();
@@ -73,25 +92,6 @@ namespace VnodeTest.GameEntities
                 distance--;
             }
             return output;
-        }
-
-        public List<int> GetDiagonals(Gameboard gameboard, int distance = 7)
-        {
-            var diagonals = new List<ValueTuple<int, int>>();
-            for (int directionX = -1; directionX < 2; directionX += 2)
-                for (int directionY = -1; directionY < 2; directionY += 2)
-                    diagonals.AddRange(GetPotentialMoves((directionX, directionY), gameboard, distance));
-            return ConvertToOneD(diagonals);
-        }
-
-        public List<int> GetStraightLines(Gameboard gameboard, int distance = 7)
-        {
-            var straightLines = new List<ValueTuple<int, int>>();
-            for (int directionX = -1; directionX < 2; directionX += 2)
-                straightLines.AddRange(GetPotentialMoves((directionX, 0), gameboard, distance));
-            for (int directionY = -1; directionY < 2; directionY += 2)
-                straightLines.AddRange(GetPotentialMoves((0, directionY), gameboard, distance));
-            return ConvertToOneD(straightLines);
         }
 
         private string GetSprite()

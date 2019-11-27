@@ -13,12 +13,11 @@ namespace VnodeTest.GameEntities
             Value = PieceValue.King;
         }
 
-
-
         public override List<int> GetValidMovements(Gameboard gameboard)
         {
             return GetDiagonals(gameboard, 1).Concat(GetStraightLines(gameboard, 1)).ToList();
         }
+
         public override BasePiece Copy() => new King(Position, Color);
     }
 }

@@ -14,7 +14,6 @@ namespace VnodeTest.GameEntities
             Value = PieceValue.Pawn;
         }
 
-        //TODO: Promotion
         public override List<int> GetValidMovements(Gameboard gameboard)
         {
             int possibleMove = (StartPosition == Position) ? 2 : 1;
