@@ -159,6 +159,18 @@ namespace VnodeTest.GameEntities
             //_pieces where !=empty && correct color
             var _pieces = Board.Where(p => p.ContainsPiece && p.Piece.Color == CurrentPlayerColor);
 
+            if (match.Value.Contains("0-0"))
+            {
+                var king = _pieces.Where(k => k.Piece is King).Single();
+                if (match.Value == "0-0")
+                    TryCastling(king, this[king.Piece.PositionXY.X + 3, king.Piece.PositionXY.Y]);
+                else
+                    TryCastling(king, this[king.Piece.PositionXY.X - 4, king.Piece.PositionXY.Y]);
+                ChangeCurrentPlayer();
+                CheckForGameOver();
+                return true;
+            }
+
             if (match.Value == "")
                 //_pieces where correct PieceType
                 _pieces = _pieces.Where(v => (match.Groups["piece"].Value switch
@@ -189,21 +201,30 @@ namespace VnodeTest.GameEntities
 
             //promotion
             if (match.Groups["promotion"].Value != null)
-            {
-                TryMove(_pieces.Single(), destination);
-                Board[destination.Position].Piece = match.Groups["promotion"].Value switch
+                if (TryMove(_pieces.Single(), destination))
                 {
-                    "=Q" => new Queen(destination.Position, CurrentPlayerColor),
-                    "=R" => new Rook(destination.Position, CurrentPlayerColor),
-                    "=N" => new Knight(destination.Position, CurrentPlayerColor),
-                    "=B" => new Bishop(destination.Position, CurrentPlayerColor),
-                    _ => default
-                };
-                return true;
-            }
+
+                    Board[destination.Position].Piece = match.Groups["promotion"].Value switch
+                    {
+                        "=Q" => new Queen(destination.Position, CurrentPlayerColor),
+                        "=R" => new Rook(destination.Position, CurrentPlayerColor),
+                        "=N" => new Knight(destination.Position, CurrentPlayerColor),
+                        "=B" => new Bishop(destination.Position, CurrentPlayerColor),
+                        _ => default
+                    };
+                    ChangeCurrentPlayer();
+                    CheckForGameOver();
+                    return true;
+                }
+                else
+                    throw new Exception("error in promotion");
 
             if (TryMove(_pieces.Single(), destination))
+            {
+                ChangeCurrentPlayer();
+                CheckForGameOver();
                 return true;
+            }
             return false;
         }
 
