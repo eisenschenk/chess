@@ -12,6 +12,7 @@ namespace VnodeTest.GameEntities
         public Tile[] Board = new Tile[64];
         public bool Promotion;
         public bool GameOver;
+        public PieceColor Winner;
         public PieceColor CurrentPlayerColor = PieceColor.White;
         public Tile Selected;
         //public (int X, int Y) PositionXY
@@ -152,12 +153,9 @@ namespace VnodeTest.GameEntities
                 return true;
             return false;
         }
-        public bool TryANtoMyN(string notation)
+
+        private bool TryAnCastling(Match match, IEnumerable<Tile> _pieces)
         {
-            var match = Regex.Match(notation, "^(?<piece>[KQRNB]?)(?<sourceX>[a-h]?)(?<sourceY>[1-8]?)(?<captures>x?)(?<destination>[a-h][1-8])(?<promotion>(=[QRNB])?)(?<check>\\+?)(?<mate>#?)$",
-                    RegexOptions.Singleline & RegexOptions.ExplicitCapture);
-            //_pieces where !=empty && correct color
-            var _pieces = Board.Where(p => p.ContainsPiece && p.Piece.Color == CurrentPlayerColor);
 
             if (match.Value.Contains("0-0"))
             {
@@ -170,36 +168,44 @@ namespace VnodeTest.GameEntities
                 CheckForGameOver();
                 return true;
             }
+            return false;
+        }
 
-            if (match.Value == "")
-                //_pieces where correct PieceType
-                _pieces = _pieces.Where(v => (match.Groups["piece"].Value switch
-                {
-                    "K" => v.Piece is King,
-                    "Q" => v.Piece is Queen,
-                    "R" => v.Piece is Rook,
-                    "N" => v.Piece is Knight,
-                    "B" => v.Piece is Bishop,
-                    _ => v.Piece is BasePiece
-                }));
-            //_pieces where correct sourceX position if its specified
+        private IEnumerable<Tile> GetCorrectPieceType(Match match, IEnumerable<Tile> _pieces)
+        {
+
+            _pieces = _pieces.Where(v => (match.Groups["piece"].Value switch
+            {
+                "K" => v.Piece is King,
+                "Q" => v.Piece is Queen,
+                "R" => v.Piece is Rook,
+                "N" => v.Piece is Knight,
+                "B" => v.Piece is Bishop,
+                _ => v.Piece is BasePiece
+            }));
+            return _pieces;
+        }
+
+        private IEnumerable<Tile> GetCorrectSourceX(Match match, IEnumerable<Tile> _pieces)
+        {
             _pieces = _pieces.Where(x =>
             match.Groups["sourceX"].Value != null
             ? x.Piece.PositionXY.X == ParseStringXToInt(match.Groups["sourceX"].Value)
             : x.ContainsPiece);
+            return _pieces;
+        }
 
-            //_pieces where correct sourceY position if its specified
+        private IEnumerable<Tile> GetCorrectSourceY(Match match, IEnumerable<Tile> _pieces)
+        {
             _pieces = _pieces.Where(y =>
             match.Groups["sourceY"].Value != null
             ? y.Piece.PositionXY.Y == ParseStringYToInt(match.Groups["sourceY"].Value)
             : y.ContainsPiece);
+            return _pieces;
+        }
 
-            //_pieces where potentialmoves include destination
-            string _destination = match.Groups["destination"].Value;
-            var destination = this[ParseStringXToInt(_destination), ParseStringYToInt(_destination)];
-            _pieces = _pieces.Where(d => d.Piece.GetValidMovements(this).Contains(destination.Position));
-
-            //promotion
+        private bool TryAnPromotion(Match match, IEnumerable<Tile> _pieces, Tile destination)
+        {
             if (match.Groups["promotion"].Value != null)
                 if (TryMove(_pieces.Single(), destination))
                 {
@@ -218,6 +224,53 @@ namespace VnodeTest.GameEntities
                 }
                 else
                     throw new Exception("error in promotion");
+            return false;
+        }
+
+        private IEnumerable<Tile> GetCorrectDestination(Tile destination, IEnumerable<Tile> _pieces)
+        {
+            _pieces = _pieces.Where(d => d.Piece.GetValidMovements(this).Contains(destination.Position));
+            return _pieces;
+        }
+
+        private bool TryEndGame(Match match, IEnumerable<Tile> _pieces)
+        {
+            if (match.Value.Contains("1-0") || match.Value.Contains("0-1") || match.Value.Contains("½–½"))
+            {
+                Winner = match.Value switch
+                {
+                    "1-0" => PieceColor.White,
+                    "0-1" => PieceColor.Black,
+                    "½–½" => PieceColor.Zero,
+                    _ => default
+                };
+                GameOver = true;
+                return true;
+            }
+            return false;
+
+        }
+
+        public bool TryANtoMyN(string notation)
+        {
+            var match = Regex.Match(notation, "^(?<piece>[KQRNB]?)(?<sourceX>[a-h]?)(?<sourceY>[1-8]?)(?<captures>x?)(?<destination>[a-h][1-8])(?<promotion>(=[QRNB])?)(?<check>\\+?)(?<mate>#?)$",
+                    RegexOptions.Singleline & RegexOptions.ExplicitCapture);
+            var destination = this[ParseStringXToInt(match.Groups["destination"].Value), ParseStringYToInt(match.Groups["destination"].Value)];
+
+            //_pieces where !=empty && correct color
+            var _pieces = Board.Where(p => p.ContainsPiece && p.Piece.Color == CurrentPlayerColor);
+            if (TryEndGame(match, _pieces))
+                return true;
+            if (TryAnCastling(match, _pieces))
+                return true;
+
+            _pieces = GetCorrectPieceType(match, _pieces);
+            _pieces = GetCorrectSourceX(match, _pieces);
+            _pieces = GetCorrectSourceY(match, _pieces);
+            _pieces = GetCorrectDestination(destination, _pieces);
+
+            if (TryAnPromotion(match, _pieces, destination))
+                return true;
 
             if (TryMove(_pieces.Single(), destination))
             {
@@ -225,7 +278,8 @@ namespace VnodeTest.GameEntities
                 CheckForGameOver();
                 return true;
             }
-            return false;
+            else
+                throw new Exception("error in TryMove() in AN");
         }
 
         private int ParseStringXToInt(string input)

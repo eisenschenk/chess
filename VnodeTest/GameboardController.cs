@@ -48,14 +48,14 @@ namespace VnodeTest
         private VNode RenderGameOver()
         {
             string winner;
-            switch (GameBoard.CurrentPlayerColor)
+            switch (GameBoard.Winner)
             {
-                case GameEntities.PieceColor.Black: winner = "White"; break;
-                case GameEntities.PieceColor.White: winner = "Black"; break;
-                case GameEntities.PieceColor.Zero: winner = "error"; break;
+                case GameEntities.PieceColor.Black: winner = "Black won"; break;
+                case GameEntities.PieceColor.White: winner = "White won"; break;
+                case GameEntities.PieceColor.Zero: winner = "Draw"; break;
                 default: winner = "error"; break;
             }
-            return Text($"Gameover! {winner} won");
+            return Text($"Gameover! {winner}");
         }
 
         private VNode RenderPromotionSelection()
