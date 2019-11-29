@@ -68,22 +68,20 @@ namespace VnodeTest.GameEntities
             //some enemy piece might be standing next to the king, rooks potentialmoves dont prevent castling ...
             if (target.ContainsPiece)
                 if (target.Piece is Rook && start.Piece is King
+                //both didnt move
                 && !target.Piece.HasMoved && !start.Piece.HasMoved
+                //same color 
                 && start.Piece.Color == target.Piece.Color
-                && (target.Piece.GetStraightLines(this).Contains(start.Piece.Position + 1)
-                    || target.Piece.GetStraightLines(this).Contains(start.Piece.Position - 1)))
+                //nothing between king and rook, +/- 1 for either left or rright rook
+                && (target.Piece.GetStraightLines(this).Contains(start.Piece.Position + 1) || target.Piece.GetStraightLines(this).Contains(start.Piece.Position - 1)))
                 {
+                    //direction hack => target either left or right rook
                     int direction = 1;
                     if (start.Piece.Position > target.Piece.Position)
                         direction *= -1;
-
-                    Board[start.Position + 2 * direction].Piece = start.Piece;
-                    Board[start.Position + 2 * direction].Piece.Position = start.Position + 2 * direction;
-                    Board[start.Position + direction].Piece = target.Piece;
-                    Board[start.Position + direction].Piece.Position = start.Position + direction;
-
-                    Board[start.Position].Piece = null;
-                    Board[target.Position].Piece = null;
+                    //moving king&rook
+                    MovePiece(start, Board[start.Position + 2 * direction]);
+                    MovePiece(target, Board[start.Position + direction]);
                     Selected = null;
                     return true;
                 }
@@ -92,7 +90,6 @@ namespace VnodeTest.GameEntities
 
         public void CheckForPossibleEnPassant(Tile start, Tile target)
         {
-
             if (start.Piece is Pawn && Math.Abs(start.PositionXY.Y - target.PositionXY.Y) == 2
                 && HasAdjacentEnemyPawn(target))
                 EnPassantPossible = true;
@@ -124,7 +121,7 @@ namespace VnodeTest.GameEntities
                 MovePiece(start, target);
                 Selected = null;
                 TryEnablePromotion(target);
-                ChangeCurrentPlayer();
+                CurrentPlayerColor = InverseColor();
                 CheckForGameOver();
                 return true;
             }
@@ -154,14 +151,6 @@ namespace VnodeTest.GameEntities
             start.Piece = null;
         }
 
-        public void ChangeCurrentPlayer()
-        {
-            if (CurrentPlayerColor == PieceColor.White)
-                CurrentPlayerColor = PieceColor.Black;
-            else
-                CurrentPlayerColor = PieceColor.White;
-        }
-
         public void TryEnablePromotion(Tile tile)
         {
             if (tile.Piece is Pawn && (tile.Piece.Position > 55 || tile.Piece.Position < 7))
@@ -181,7 +170,7 @@ namespace VnodeTest.GameEntities
                     TryCastling(king, this[king.Piece.PositionXY.X + 3, king.Piece.PositionXY.Y]);
                 else
                     TryCastling(king, this[king.Piece.PositionXY.X - 4, king.Piece.PositionXY.Y]);
-                ChangeCurrentPlayer();
+                CurrentPlayerColor = InverseColor();
                 CheckForGameOver();
                 return true;
             }
@@ -190,7 +179,6 @@ namespace VnodeTest.GameEntities
 
         private IEnumerable<Tile> GetCorrectPieceType(Match match, IEnumerable<Tile> _pieces)
         {
-
             _pieces = _pieces.Where(v => (match.Groups["piece"].Value switch
             {
                 "K" => v.Piece is King,
@@ -233,7 +221,6 @@ namespace VnodeTest.GameEntities
             if (match.Groups["promotion"].Value != "")
                 if (TryMove(_pieces.Single(), destination))
                 {
-
                     Board[destination.Position].Piece = match.Groups["promotion"].Value switch
                     {
                         "=Q" => new Queen(destination.Position, InverseColor()),
@@ -280,6 +267,7 @@ namespace VnodeTest.GameEntities
 
             //_pieces where !=empty && correct color
             var _pieces = Board.Where(p => p.ContainsPiece && p.Piece.Color == CurrentPlayerColor);
+
             if (TryEndGame(notation, _pieces))
                 return true;
             if (TryAnCastling(notation, _pieces))

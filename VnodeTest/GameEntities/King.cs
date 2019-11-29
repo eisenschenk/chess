@@ -13,9 +13,9 @@ namespace VnodeTest.GameEntities
             Value = PieceValue.King;
         }
 
-        protected override List<int> GetPotentialMovements(Gameboard gameboard)
+        protected override IEnumerable<int> GetPotentialMovements(Gameboard gameboard)
         {
-            return GetDiagonals(gameboard, 1).Concat(GetStraightLines(gameboard, 1)).ToList();
+            return GetDiagonals(gameboard, 1).Concat(GetStraightLines(gameboard, 1));
         }
 
         public override BasePiece Copy() => new King(Position, Color);

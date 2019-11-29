@@ -13,7 +13,7 @@ namespace VnodeTest.GameEntities
             Value = PieceValue.Rook;
         }
 
-        protected override List<int> GetPotentialMovements(Gameboard gameboard)
+        protected override IEnumerable<int> GetPotentialMovements(Gameboard gameboard)
         {
             return GetStraightLines(gameboard);
         }

@@ -14,25 +14,22 @@ namespace VnodeTest.GameEntities
             Value = PieceValue.Pawn;
         }
 
-        protected override List<int> GetPotentialMovements(Gameboard gameboard)
+        protected override IEnumerable<int> GetPotentialMovements(Gameboard gameboard)
         {
             int possibleMove = (StartPosition == Position) ? 2 : 1;
             Func<int, bool> enemyPiece = position => gameboard.Board[position].ContainsPiece == true && gameboard.Board[position].Piece.Color != Color;
-            List<int> returnValues = new List<int>();
-            //color instead of magic numbers
             if (Color == PieceColor.White)
             {
                 //Position - 7 hack to prevent movement to the left/right
-                returnValues = GetStraightLines(gameboard, possibleMove).Where(x => x < Position - 7 && gameboard.Board[x].ContainsPiece == false).ToList();
-                returnValues.AddRange(GetDiagonals(gameboard, 1).Where(x => x < Position && enemyPiece(x) || x == gameboard.EnPassantTarget).ToList());
+                var returnValues = GetStraightLines(gameboard, possibleMove).Where(x => x < Position - 7 && gameboard.Board[x].ContainsPiece == false);
+                return returnValues.Concat(GetDiagonals(gameboard, 1).Where(x => x < Position && enemyPiece(x) || x == gameboard.EnPassantTarget));
             }
             else
             {
                 //Position + 7 hack to prevent movement to the left/right
-                returnValues = GetStraightLines(gameboard, possibleMove).Where(x => x > Position + 7 && gameboard.Board[x].ContainsPiece == false).ToList();
-                returnValues.AddRange(GetDiagonals(gameboard, 1).Where(x => x > Position && enemyPiece(x) || x == gameboard.EnPassantTarget).ToList());
+                var returnValues = GetStraightLines(gameboard, possibleMove).Where(x => x > Position + 7 && gameboard.Board[x].ContainsPiece == false);
+                return returnValues.Concat(GetDiagonals(gameboard, 1).Where(x => x > Position && enemyPiece(x) || x == gameboard.EnPassantTarget));
             }
-            return returnValues;
         }
 
         public override BasePiece Copy() => new Pawn(Position, Color);

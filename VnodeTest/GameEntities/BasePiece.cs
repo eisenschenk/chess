@@ -39,9 +39,9 @@ namespace VnodeTest.GameEntities
             Color = color;
         }
 
-        public List<int> ConvertToOneD(List<ValueTuple<int, int>> valuesXY)
+        public IEnumerable<int> ConvertToOneD(IEnumerable<ValueTuple<int, int>> valuesXY)
         {
-            return valuesXY.Select(ConvertToOneD).ToList();
+            return valuesXY.Select(ConvertToOneD);
         }
 
         public int ConvertToOneD(ValueTuple<int, int> valueXY)
@@ -49,7 +49,7 @@ namespace VnodeTest.GameEntities
             return valueXY.Item1 + valueXY.Item2 * 8;
         }
 
-        public List<int> GetDiagonals(Gameboard gameboard, int distance = 7)
+        public IEnumerable<int> GetDiagonals(Gameboard gameboard, int distance = 7)
         {
             var diagonals = new List<(int X, int Y)>();
             for (int directionX = -1; directionX < 2; directionX += 2)
@@ -58,7 +58,7 @@ namespace VnodeTest.GameEntities
             return ConvertToOneD(diagonals);
         }
 
-        public List<int> GetStraightLines(Gameboard gameboard, int distance = 7)
+        public IEnumerable<int> GetStraightLines(Gameboard gameboard, int distance = 7)
         {
             var straightLines = new List<(int X, int Y)>();
             for (int directionX = -1; directionX < 2; directionX += 2)
@@ -138,6 +138,6 @@ namespace VnodeTest.GameEntities
 
         public abstract BasePiece Copy();
 
-        protected abstract List<int> GetPotentialMovements(Gameboard gameboard);
+        protected abstract IEnumerable<int> GetPotentialMovements(Gameboard gameboard);
     }
 }

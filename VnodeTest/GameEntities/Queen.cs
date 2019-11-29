@@ -13,10 +13,10 @@ namespace VnodeTest.GameEntities
             Value = PieceValue.Queen;
         }
 
-        protected override List<int> GetPotentialMovements(Gameboard gameboard)
+        protected override IEnumerable<int> GetPotentialMovements(Gameboard gameboard)
         {
             var output = GetDiagonals(gameboard).Concat(GetStraightLines(gameboard));
-            return output.ToList();
+            return output;
         }
 
         public override BasePiece Copy() => new Queen(Position, Color);

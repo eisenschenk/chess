@@ -13,7 +13,7 @@ namespace VnodeTest.GameEntities
             Value = PieceValue.Knight;
         }
 
-        protected override List<int> GetPotentialMovements(Gameboard gameboard)
+        protected override IEnumerable<int> GetPotentialMovements(Gameboard gameboard)
         {
             var returnValues = new List<ValueTuple<int, int>>();
             for (int indexX = -1; indexX < 2; indexX += 2)
