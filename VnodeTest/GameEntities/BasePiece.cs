@@ -68,9 +68,8 @@ namespace VnodeTest.GameEntities
             return ConvertToOneD(straightLines);
         }
         //distance -> -1 
-        private List<ValueTuple<int, int>> GetPotentialMoves(ValueTuple<int, int> direction, Gameboard gameboard, int distance = 7)
+        private IEnumerable<(int X, int Y)> GetPotentialMoves((int X, int Y) direction, Gameboard gameboard, int distance = 7)
         {
-            List<(int X, int Y)> output = new List<(int, int)>();
             var currentTarget = (X: PositionXY.Item1 + direction.Item1, Y: PositionXY.Item2 + direction.Item2);
 
             while (distance > 0
@@ -82,18 +81,17 @@ namespace VnodeTest.GameEntities
                 var notNull = gameboard.Board[ConvertToOneD(currentTarget)].Piece != null;
                 var currentTargetColor = gameboard.Board[ConvertToOneD(currentTarget)].Piece?.Color;
                 if (notNull && currentTargetColor == Color)
-                    return output;
+                    yield break;
 
-                output.Add(currentTarget);
+                yield return currentTarget;
 
                 if (notNull && currentTargetColor != Color)
-                    return output;
+                    yield break;
 
-                currentTarget.Item1 += direction.Item1;
-                currentTarget.Item2 += direction.Item2;
+                currentTarget.X += direction.X;
+                currentTarget.Y += direction.Y;
                 distance--;
             }
-            return output;
         }
 
         private string GetSprite()
@@ -121,8 +119,25 @@ namespace VnodeTest.GameEntities
             };
         }
 
+        public IEnumerable<int> GetValidMovements(Gameboard gameboard)
+        {
+            return GetPotentialMovements(gameboard).Where(m =>
+            {
+                var futureGameBoard = gameboard.Copy();
+                futureGameBoard.Board[m].Piece = Copy();
+                futureGameBoard.Board[m].Piece.Position = futureGameBoard.Board[m].Position;
+                futureGameBoard.Board[Position].Piece = null;
+                var kingSameColorPosition = futureGameBoard.Board
+                    .Where(t => t.ContainsPiece && t.Piece.Color == Color && t.Piece is King)
+                    .Single().Piece.Position;
+                var enemyPieces = futureGameBoard.Board.Where(x => x.ContainsPiece && x.Piece.Color != Color);
+
+                return !enemyPieces.SelectMany(t => t.Piece.GetPotentialMovements(futureGameBoard)).Contains(kingSameColorPosition);
+            });
+        }
+
         public abstract BasePiece Copy();
 
-        public abstract List<int> GetValidMovements(Gameboard gameboard);
+        protected abstract List<int> GetPotentialMovements(Gameboard gameboard);
     }
 }

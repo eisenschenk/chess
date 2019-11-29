@@ -88,15 +88,8 @@ namespace VnodeTest
             else if (GameBoard.Selected == target)
                 GameBoard.Selected = null;
             else if (GameBoard.Selected != null)
-            {
-                if (!GameBoard.TryCastling(GameBoard.Selected, target))
-                {
-                    GameBoard.TryMove(GameBoard.Selected, target);
-                    GameBoard.TryEnablePromotion(target);
-                    GameBoard.ChangeCurrentPlayer();
-                    GameBoard.CheckForGameOver();
-                }
-            }
+                GameBoard.TryMove(GameBoard.Selected, target);
+          
         }
     }
 }

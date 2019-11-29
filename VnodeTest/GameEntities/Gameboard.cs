@@ -9,19 +9,14 @@ namespace VnodeTest.GameEntities
 {
     public class Gameboard
     {
+        // TODO property..
         public Tile[] Board = new Tile[64];
         public bool Promotion;
         public bool GameOver;
         public PieceColor Winner;
         public PieceColor CurrentPlayerColor = PieceColor.White;
         public Tile Selected;
-        //public (int X, int Y) PositionXY
-        //{
-        //    get
-        //    {
-        //        return (X: Board[])
-        //    }
-        //}
+
         public Tile this[int x, int y]
         {
             get => Board[y * 8 + x];
@@ -42,26 +37,26 @@ namespace VnodeTest.GameEntities
         private void PutPiecesInStartingPosition()
         {
             for (int pawns = 8; pawns < 16; pawns++)
-                Board[pawns].Piece = new Pawn(pawns, PieceColor.White);
-            Board[0].Piece = new Rook(0, PieceColor.White);
-            Board[1].Piece = new Knight(1, PieceColor.White);
-            Board[2].Piece = new Bishop(2, PieceColor.White);
-            Board[3].Piece = new Queen(3, PieceColor.White);
-            Board[4].Piece = new King(4, PieceColor.White);
-            Board[5].Piece = new Bishop(5, PieceColor.White);
-            Board[6].Piece = new Knight(6, PieceColor.White);
-            Board[7].Piece = new Rook(7, PieceColor.White);
+                Board[pawns].Piece = new Pawn(pawns, PieceColor.Black);
+            Board[0].Piece = new Rook(0, PieceColor.Black);
+            Board[1].Piece = new Knight(1, PieceColor.Black);
+            Board[2].Piece = new Bishop(2, PieceColor.Black);
+            Board[3].Piece = new Queen(3, PieceColor.Black);
+            Board[4].Piece = new King(4, PieceColor.Black);
+            Board[5].Piece = new Bishop(5, PieceColor.Black);
+            Board[6].Piece = new Knight(6, PieceColor.Black);
+            Board[7].Piece = new Rook(7, PieceColor.Black);
 
             for (int pawns = 48; pawns < 56; pawns++)
-                Board[pawns].Piece = new Pawn(pawns, PieceColor.Black);
-            Board[56].Piece = new Rook(56, PieceColor.Black);
-            Board[57].Piece = new Knight(57, PieceColor.Black);
-            Board[58].Piece = new Bishop(58, PieceColor.Black);
-            Board[59].Piece = new Queen(59, PieceColor.Black);
-            Board[60].Piece = new King(60, PieceColor.Black);
-            Board[61].Piece = new Bishop(61, PieceColor.Black);
-            Board[62].Piece = new Knight(62, PieceColor.Black);
-            Board[63].Piece = new Rook(63, PieceColor.Black);
+                Board[pawns].Piece = new Pawn(pawns, PieceColor.White);
+            Board[56].Piece = new Rook(56, PieceColor.White);
+            Board[57].Piece = new Knight(57, PieceColor.White);
+            Board[58].Piece = new Bishop(58, PieceColor.White);
+            Board[59].Piece = new Queen(59, PieceColor.White);
+            Board[60].Piece = new King(60, PieceColor.White);
+            Board[61].Piece = new Bishop(61, PieceColor.White);
+            Board[62].Piece = new Knight(62, PieceColor.White);
+            Board[63].Piece = new Rook(63, PieceColor.White);
         }
 
         public Gameboard Copy() => new Gameboard(Board.Select(t => t.Copy()));
@@ -95,20 +90,26 @@ namespace VnodeTest.GameEntities
 
         public bool TryMove(Tile start, Tile target)
         {
-            if (!start.Piece.GetValidMovements(this).Contains(target.Position) || OwnKingIsCheckedAfterMove(start, target))
-                return false;
-            MovePiece(start, target);
-            Selected = null;
+            if (!TryCastling(start, target))
+            {
 
-            return true;
+                if (!start.Piece.GetValidMovements(this).Contains(target.Position))
+                    return false;
+                MovePiece(start, target);
+                Selected = null;
+                TryEnablePromotion(target);
+                ChangeCurrentPlayer();
+                CheckForGameOver();
+                return true;
+            }
+            return false;
         }
 
         public void CheckForGameOver()
         {
             foreach (Tile tile in Board.Where(t => t.ContainsPiece && t.Piece.Color == CurrentPlayerColor))
-                foreach (int potentialmove in tile.Piece.GetValidMovements(this))
-                    if (!OwnKingIsCheckedAfterMove(tile, Board[potentialmove]))
-                        return;
+                if (tile.Piece.GetValidMovements(this).Any())
+                    return;
             GameOver = true;
         }
 
@@ -135,7 +136,7 @@ namespace VnodeTest.GameEntities
                 Promotion = true;
             }
         }
-
+        //TODO ?? why not used
         private bool OwnKingIsCheckedAfterMove(Tile source, Tile targetTile)
         {
             Tile start = source.Copy();
@@ -154,13 +155,13 @@ namespace VnodeTest.GameEntities
             return false;
         }
 
-        private bool TryAnCastling(Match match, IEnumerable<Tile> _pieces)
+        private bool TryAnCastling(string notation, IEnumerable<Tile> _pieces)
         {
 
-            if (match.Value.Contains("0-0"))
+            if (notation.Contains("0-0") || notation.Contains("O-O"))
             {
                 var king = _pieces.Where(k => k.Piece is King).Single();
-                if (match.Value == "0-0")
+                if (notation == "0-0" || notation == "O-O")
                     TryCastling(king, this[king.Piece.PositionXY.X + 3, king.Piece.PositionXY.Y]);
                 else
                     TryCastling(king, this[king.Piece.PositionXY.X - 4, king.Piece.PositionXY.Y]);
@@ -181,7 +182,7 @@ namespace VnodeTest.GameEntities
                 "R" => v.Piece is Rook,
                 "N" => v.Piece is Knight,
                 "B" => v.Piece is Bishop,
-                _ => v.Piece is BasePiece
+                _ => v.Piece is Pawn
             }));
             return _pieces;
         }
@@ -189,7 +190,7 @@ namespace VnodeTest.GameEntities
         private IEnumerable<Tile> GetCorrectSourceX(Match match, IEnumerable<Tile> _pieces)
         {
             _pieces = _pieces.Where(x =>
-            match.Groups["sourceX"].Value != null
+            match.Groups["sourceX"].Value != ""
             ? x.Piece.PositionXY.X == ParseStringXToInt(match.Groups["sourceX"].Value)
             : x.ContainsPiece);
             return _pieces;
@@ -198,28 +199,33 @@ namespace VnodeTest.GameEntities
         private IEnumerable<Tile> GetCorrectSourceY(Match match, IEnumerable<Tile> _pieces)
         {
             _pieces = _pieces.Where(y =>
-            match.Groups["sourceY"].Value != null
+            match.Groups["sourceY"].Value != ""
             ? y.Piece.PositionXY.Y == ParseStringYToInt(match.Groups["sourceY"].Value)
             : y.ContainsPiece);
             return _pieces;
         }
 
+        private PieceColor InverseColor()
+        {
+            if (CurrentPlayerColor == PieceColor.White)
+                return PieceColor.Black;
+            else return PieceColor.White;
+        }
+
         private bool TryAnPromotion(Match match, IEnumerable<Tile> _pieces, Tile destination)
         {
-            if (match.Groups["promotion"].Value != null)
+            if (match.Groups["promotion"].Value != "")
                 if (TryMove(_pieces.Single(), destination))
                 {
 
                     Board[destination.Position].Piece = match.Groups["promotion"].Value switch
                     {
-                        "=Q" => new Queen(destination.Position, CurrentPlayerColor),
-                        "=R" => new Rook(destination.Position, CurrentPlayerColor),
-                        "=N" => new Knight(destination.Position, CurrentPlayerColor),
-                        "=B" => new Bishop(destination.Position, CurrentPlayerColor),
+                        "=Q" => new Queen(destination.Position, InverseColor()),
+                        "=R" => new Rook(destination.Position, InverseColor()),
+                        "=N" => new Knight(destination.Position, InverseColor()),
+                        "=B" => new Bishop(destination.Position, InverseColor()),
                         _ => default
                     };
-                    ChangeCurrentPlayer();
-                    CheckForGameOver();
                     return true;
                 }
                 else
@@ -233,11 +239,11 @@ namespace VnodeTest.GameEntities
             return _pieces;
         }
 
-        private bool TryEndGame(Match match, IEnumerable<Tile> _pieces)
+        private bool TryEndGame(string notation, IEnumerable<Tile> _pieces)
         {
-            if (match.Value.Contains("1-0") || match.Value.Contains("0-1") || match.Value.Contains("½–½"))
+            if (notation.Contains("1-0") || notation.Contains("0-1") || notation.Contains("½–½"))
             {
-                Winner = match.Value switch
+                Winner = notation switch
                 {
                     "1-0" => PieceColor.White,
                     "0-1" => PieceColor.Black,
@@ -255,32 +261,35 @@ namespace VnodeTest.GameEntities
         {
             var match = Regex.Match(notation, "^(?<piece>[KQRNB]?)(?<sourceX>[a-h]?)(?<sourceY>[1-8]?)(?<captures>x?)(?<destination>[a-h][1-8])(?<promotion>(=[QRNB])?)(?<check>\\+?)(?<mate>#?)$",
                     RegexOptions.Singleline & RegexOptions.ExplicitCapture);
-            var destination = this[ParseStringXToInt(match.Groups["destination"].Value), ParseStringYToInt(match.Groups["destination"].Value)];
 
             //_pieces where !=empty && correct color
             var _pieces = Board.Where(p => p.ContainsPiece && p.Piece.Color == CurrentPlayerColor);
-            if (TryEndGame(match, _pieces))
+            if (TryEndGame(notation, _pieces))
                 return true;
-            if (TryAnCastling(match, _pieces))
+            if (TryAnCastling(notation, _pieces))
                 return true;
+            //debugg 
+            string x;
+            if (notation == "Rxf1")
+                x = "rr";
+            //debugg\\
 
+            var destination = this[ParseStringXToInt(match.Groups["destination"].Value), ParseStringYToInt(match.Groups["destination"].Value)];
             _pieces = GetCorrectPieceType(match, _pieces);
             _pieces = GetCorrectSourceX(match, _pieces);
             _pieces = GetCorrectSourceY(match, _pieces);
             _pieces = GetCorrectDestination(destination, _pieces);
+            var pieces = _pieces.ToArray();
 
-            if (TryAnPromotion(match, _pieces, destination))
+            if (TryAnPromotion(match, pieces, destination))
                 return true;
 
-            if (TryMove(_pieces.Single(), destination))
-            {
-                ChangeCurrentPlayer();
-                CheckForGameOver();
+            if (TryMove(pieces.Single(), destination))
                 return true;
-            }
             else
                 throw new Exception("error in TryMove() in AN");
         }
+
 
         private int ParseStringXToInt(string input)
         {
@@ -291,10 +300,21 @@ namespace VnodeTest.GameEntities
         }
         private int ParseStringYToInt(string input)
         {
-            var c = input[1];
+            var c = input[input.Length - 1];
             if (c < '1' || c > '8')
                 throw new Exception("out of bounds Y");
-            return c - '1';
+            return c switch
+            {
+                '1' => 7,
+                '2' => 6,
+                '3' => 5,
+                '4' => 4,
+                '5' => 3,
+                '6' => 2,
+                '7' => 1,
+                '8' => 0,
+                _ => default
+            };
         }
 
     }

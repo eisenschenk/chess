@@ -14,13 +14,13 @@ namespace VnodeTest.GameEntities
             Value = PieceValue.Pawn;
         }
 
-        public override List<int> GetValidMovements(Gameboard gameboard)
+        protected override List<int> GetPotentialMovements(Gameboard gameboard)
         {
             int possibleMove = (StartPosition == Position) ? 2 : 1;
             Func<int,bool> enemyPiece = position => gameboard.Board[position].ContainsPiece == true && gameboard.Board[position].Piece.Color != Color;
             List<int> returnValues;
             //color instead of magic numbers
-            if (Color == PieceColor.Black)
+            if (Color == PieceColor.White)
             {
                 //Position - 7 hack to prevent movement to the left/right
                 returnValues = GetStraightLines(gameboard, possibleMove).Where(x => x < Position - 7 && gameboard.Board[x].ContainsPiece == false).ToList();
