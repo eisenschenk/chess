@@ -8,7 +8,7 @@ namespace VnodeTest.GameEntities
 {
     class Pawn : BasePiece
     {
-       
+
         public Pawn(int position, PieceColor color) : base(position, color)
         {
             Value = PieceValue.Pawn;
@@ -17,20 +17,20 @@ namespace VnodeTest.GameEntities
         protected override List<int> GetPotentialMovements(Gameboard gameboard)
         {
             int possibleMove = (StartPosition == Position) ? 2 : 1;
-            Func<int,bool> enemyPiece = position => gameboard.Board[position].ContainsPiece == true && gameboard.Board[position].Piece.Color != Color;
-            List<int> returnValues;
+            Func<int, bool> enemyPiece = position => gameboard.Board[position].ContainsPiece == true && gameboard.Board[position].Piece.Color != Color;
+            List<int> returnValues = new List<int>();
             //color instead of magic numbers
             if (Color == PieceColor.White)
             {
                 //Position - 7 hack to prevent movement to the left/right
                 returnValues = GetStraightLines(gameboard, possibleMove).Where(x => x < Position - 7 && gameboard.Board[x].ContainsPiece == false).ToList();
-                returnValues.AddRange(GetDiagonals(gameboard, 1).Where(x => x < Position && enemyPiece(x)).ToList());
+                returnValues.AddRange(GetDiagonals(gameboard, 1).Where(x => x < Position && enemyPiece(x) || x == gameboard.EnPassantTarget).ToList());
             }
             else
             {
                 //Position + 7 hack to prevent movement to the left/right
                 returnValues = GetStraightLines(gameboard, possibleMove).Where(x => x > Position + 7 && gameboard.Board[x].ContainsPiece == false).ToList();
-                returnValues.AddRange(GetDiagonals(gameboard, 1).Where(x => x > Position && enemyPiece(x)).ToList());
+                returnValues.AddRange(GetDiagonals(gameboard, 1).Where(x => x > Position && enemyPiece(x) || x == gameboard.EnPassantTarget).ToList());
             }
             return returnValues;
         }

@@ -15,6 +15,7 @@ namespace VnodeTest.GameEntities
         public BasePiece Piece { get; set; }
         public bool ContainsPiece => Piece == null ? false : true;
         public int Position { get; }
+        public (int X, int Y) PositionXY => (Position % 8, Position / 8);
 
         public Tile(int index)
         {

@@ -13,7 +13,7 @@ namespace VnodeTest.GameEntities
         public PieceColor Color { get; set; }
         public PieceValue Value { get; set; }
         public string Sprite => GetSprite();
-        public /*ValueTuple<int, int>*/ (int X, int Y) PositionXY => (Position % 8, Position / 8);
+        public (int X, int Y) PositionXY => (Position % 8, Position / 8);
         public int StartPosition { get; } //von color abh. 
         public bool HasMoved { get; private set; }
         private int _Position;

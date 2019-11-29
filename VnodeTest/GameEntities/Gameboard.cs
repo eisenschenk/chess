@@ -9,13 +9,15 @@ namespace VnodeTest.GameEntities
 {
     public class Gameboard
     {
-        // TODO property..
-        public Tile[] Board = new Tile[64];
-        public bool Promotion;
-        public bool GameOver;
-        public PieceColor Winner;
-        public PieceColor CurrentPlayerColor = PieceColor.White;
-        public Tile Selected;
+        public Tile[] Board { get; set; } = new Tile[64];
+        public bool Promotion { get; set; }
+        public bool GameOver { get; set; }
+        public PieceColor Winner { get; set; }
+        public PieceColor CurrentPlayerColor { get; set; } = PieceColor.White;
+        public Tile Selected { get; set; }
+        public int EnPassantTarget { get; set; }
+        public (BasePiece start, Tile target) Lastmove { get; set; }
+        public bool EnPassantPossible { get; set; }
 
         public Tile this[int x, int y]
         {
@@ -88,6 +90,29 @@ namespace VnodeTest.GameEntities
             return false;
         }
 
+        public void CheckForPossibleEnPassant(Tile start, Tile target)
+        {
+
+            if (start.Piece is Pawn && Math.Abs(start.PositionXY.Y - target.PositionXY.Y) == 2
+                && HasAdjacentEnemyPawn(target))
+                EnPassantPossible = true;
+        }
+
+        private bool HasAdjacentEnemyPawn(Tile target)
+        {
+            static bool IsInBounds(int X)
+            {
+                if (X < 8 && X >= 0)
+                    return true;
+                return false;
+            }
+            for (int directionX = -1; directionX < 2; directionX += 2)
+                if (IsInBounds(target.PositionXY.X + directionX) && Board[target.PositionXY.X + directionX].ContainsPiece
+                    && this[target.PositionXY.X + directionX, target.PositionXY.Y].Piece is Pawn)
+                    return true;
+            return false;
+        }
+
         public bool TryMove(Tile start, Tile target)
         {
             if (!TryCastling(start, target))
@@ -95,6 +120,7 @@ namespace VnodeTest.GameEntities
 
                 if (!start.Piece.GetValidMovements(this).Contains(target.Position))
                     return false;
+                CheckForPossibleEnPassant(start, target);
                 MovePiece(start, target);
                 Selected = null;
                 TryEnablePromotion(target);
@@ -115,6 +141,14 @@ namespace VnodeTest.GameEntities
 
         private void MovePiece(Tile start, Tile target)
         {
+            if (start.Piece is Pawn)
+            {
+                if (EnPassantPossible && target.Position == EnPassantTarget)
+                    Board[Lastmove.target.Position].Piece = null;
+                else if (Math.Abs(start.PositionXY.Y - target.PositionXY.Y) == 2)
+                    EnPassantTarget = start.PositionXY.X + (start.Piece.Color == PieceColor.Black ? (start.PositionXY.Y + 1) * 8 : (start.PositionXY.Y - 1) * 8);
+            }
+            Lastmove = (start.Piece.Copy(), target.Copy());
             target.Piece = start.Piece;
             target.Piece.Position = target.Position;
             start.Piece = null;
@@ -135,24 +169,6 @@ namespace VnodeTest.GameEntities
                 Selected = tile;
                 Promotion = true;
             }
-        }
-        //TODO ?? why not used
-        private bool OwnKingIsCheckedAfterMove(Tile source, Tile targetTile)
-        {
-            Tile start = source.Copy();
-            Tile target = targetTile.Copy();
-            var futureGameBoard = this.Copy();
-            futureGameBoard.Board[target.Position].Piece = start.Piece;
-            futureGameBoard.Board[target.Position].Piece.Position = target.Position;
-            futureGameBoard.Board[start.Position].Piece = null;
-            var kingSameColorPosition = futureGameBoard.Board
-                .Where(t => t.ContainsPiece && t.Piece.Color == start.Piece.Color && t.Piece is King)
-                .First().Piece.Position;
-            var enemyPieces = futureGameBoard.Board.Where(x => x.ContainsPiece && x.Piece.Color != start.Piece.Color);
-
-            if (enemyPieces.SelectMany(t => t.Piece.GetValidMovements(futureGameBoard)).Contains(kingSameColorPosition))
-                return true;
-            return false;
         }
 
         private bool TryAnCastling(string notation, IEnumerable<Tile> _pieces)
@@ -268,11 +284,6 @@ namespace VnodeTest.GameEntities
                 return true;
             if (TryAnCastling(notation, _pieces))
                 return true;
-            //debugg 
-            string x;
-            if (notation == "Rxf1")
-                x = "rr";
-            //debugg\\
 
             var destination = this[ParseStringXToInt(match.Groups["destination"].Value), ParseStringYToInt(match.Groups["destination"].Value)];
             _pieces = GetCorrectPieceType(match, _pieces);
