@@ -60,11 +60,11 @@ namespace VnodeTest
 
         private VNode RenderPromotionSelection()
         {
-            List<GameEntities.Tile> promotionSelect = new List<GameEntities.Tile>();
-            promotionSelect.Add(new GameEntities.Tile(new GameEntities.Rook(0, GameBoard.Selected.Piece.Color), 0));
-            promotionSelect.Add(new GameEntities.Tile(new GameEntities.Knight(1, GameBoard.Selected.Piece.Color), 1));
-            promotionSelect.Add(new GameEntities.Tile(new GameEntities.Bishop(2, GameBoard.Selected.Piece.Color), 2));
-            promotionSelect.Add(new GameEntities.Tile(new GameEntities.Queen(3, GameBoard.Selected.Piece.Color), 3));
+            GameEntities.Tile[] promotionSelect = new GameEntities.Tile[4];
+            promotionSelect[0] = (new GameEntities.Tile(new GameEntities.Rook(0, GameBoard.Selected.Piece.Color), 0));
+            promotionSelect[1] = (new GameEntities.Tile(new GameEntities.Knight(1, GameBoard.Selected.Piece.Color), 1));
+            promotionSelect[2] = (new GameEntities.Tile(new GameEntities.Bishop(2, GameBoard.Selected.Piece.Color), 2));
+            promotionSelect[3] = (new GameEntities.Tile(new GameEntities.Queen(3, GameBoard.Selected.Piece.Color), 3));
             return Div(
                 Styles.M2,
                 Text($"Select Piece you want the Pawn to be promoted to.", Styles.FontSize1p5),
@@ -89,7 +89,7 @@ namespace VnodeTest
                 GameBoard.Selected = null;
             else if (GameBoard.Selected != null)
                 GameBoard.TryMove(GameBoard.Selected, target);
-          
+
         }
     }
 }

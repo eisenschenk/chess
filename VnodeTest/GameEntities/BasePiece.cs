@@ -51,21 +51,20 @@ namespace VnodeTest.GameEntities
 
         public IEnumerable<int> GetDiagonals(Gameboard gameboard, int distance = 7)
         {
-            var diagonals = new List<(int X, int Y)>();
             for (int directionX = -1; directionX < 2; directionX += 2)
                 for (int directionY = -1; directionY < 2; directionY += 2)
-                    diagonals.AddRange(GetPotentialMoves((directionX, directionY), gameboard, distance));
-            return ConvertToOneD(diagonals);
+                    foreach (var move in ConvertToOneD(GetPotentialMoves((directionX, directionY), gameboard, distance)))
+                        yield return move;
         }
 
         public IEnumerable<int> GetStraightLines(Gameboard gameboard, int distance = 7)
         {
-            var straightLines = new List<(int X, int Y)>();
-            for (int directionX = -1; directionX < 2; directionX += 2)
-                straightLines.AddRange(GetPotentialMoves((directionX, 0), gameboard, distance));
-            for (int directionY = -1; directionY < 2; directionY += 2)
-                straightLines.AddRange(GetPotentialMoves((0, directionY), gameboard, distance));
-            return ConvertToOneD(straightLines);
+            var result = Enumerable.Empty<(int, int)>();
+            for (int i = -1; i < 2; i += 2)
+                result = result
+                    .Concat(GetPotentialMoves((i, 0), gameboard, distance))
+                    .Concat(GetPotentialMoves((0, i), gameboard, distance));
+            return ConvertToOneD(result);
         }
         //distance -> -1 
         private IEnumerable<(int X, int Y)> GetPotentialMoves((int X, int Y) direction, Gameboard gameboard, int distance = 7)
