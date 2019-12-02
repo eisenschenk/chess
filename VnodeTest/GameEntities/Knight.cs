@@ -15,7 +15,7 @@ namespace VnodeTest.GameEntities
 
         protected override IEnumerable<int> GetPotentialMovements(Gameboard gameboard)
         {
-            var returnValues = new List<ValueTuple<int, int>>();
+            var returnValues = new List<(int X, int Y)>(8);
             for (int index = -1; index < 2; index += 2)
             {
                 returnValues.Add((PositionXY.X + index, PositionXY.Y - 2));
@@ -23,16 +23,10 @@ namespace VnodeTest.GameEntities
                 returnValues.Add((PositionXY.X - 2, PositionXY.Y + index));
                 returnValues.Add((PositionXY.X + 2, PositionXY.Y + index));
             }
-
-            foreach ((int x, int y) item in returnValues.ToArray())
-            {
-                if (item.x < 0 || item.x > 7 || item.y < 0 || item.y > 7
-                    || gameboard.Board[ConvertToOneD(item)].ContainsPiece == true
-                    && gameboard.Board[ConvertToOneD(item)].Piece.Color == Color)
-                    returnValues.Remove(item);
-            }
-
-            return ConvertToOneD(returnValues);
+            return returnValues.Where(p => p.X >= 0 && p.X < 8 && p.Y >= 0 && p.Y < 8
+            && (gameboard.Board[ConvertToOneD(p)].ContainsPiece == false
+            || gameboard.Board[ConvertToOneD(p)].ContainsPiece == true && gameboard.Board[ConvertToOneD(p)].Piece.Color != Color))
+                .Select(t => ConvertToOneD(t));
         }
 
         public override BasePiece Copy() => new Knight(Position, Color);
