@@ -12,8 +12,7 @@ namespace VnodeTest
     public class GameboardController
     {
         public GameEntities.Gameboard GameBoard;
-        private TimeSpan delay = TimeSpan.FromMilliseconds(300);
-        private VNode RefreshReference;
+        public VNode RefreshReference;
 
 
         public GameboardController()
@@ -22,11 +21,10 @@ namespace VnodeTest
             ThreadPool.QueueUserWorkItem(o =>
             {
                 while (true)
-                {
-                    RefreshReference?.Refresh(delay);
-                }
+                    RefreshReference?.Refresh(TimeSpan.FromSeconds(1));
             });
         }
+
 
         public VNode Render()
         {
@@ -43,7 +41,9 @@ namespace VnodeTest
                 Fragment(Enumerable.Range(0, 8)
                     .Select(rowx => Row(board.Board.Where(x => x.Position / 8 == rowx)
                     .Select(t => RenderTile(t))))),
-                Text($"EngineMove: {GameBoard.Engine.EngineMove}")
+                Text($"EngineMove: {GameBoard.EngineMove}"),
+                Text($"Time remaining White: {GameBoard.GameClockWhite.ToString()}"),
+                Text($"Time remaining Black: {GameBoard.GameClockBlack.ToString()}")
                 );
         }
 
@@ -90,29 +90,34 @@ namespace VnodeTest
 
         private void Select(GameEntities.Tile target)
         {
-            // eigener Select für Promotion bzw. RenderTile mit Onclick param
-            if (GameBoard.Promotion == true)
+            if (GameBoard.CurrentPlayerColor == GameEntities.PieceColor.White && GameBoard.PlayedByEngine.W == false
+                || GameBoard.CurrentPlayerColor == GameEntities.PieceColor.Black && GameBoard.PlayedByEngine.B == false)
             {
-                GameBoard.Board[GameBoard.Selected.Position].Piece = target.Piece;
-                GameBoard.Board[GameBoard.Selected.Position].Piece.Position = GameBoard.Selected.Position;
-                GameBoard.Selected = null;
-                GameBoard.Promotion = false;
-                return;
-            }
-            if (GameBoard.Selected == null && target.ContainsPiece && target.Piece.Color == GameBoard.CurrentPlayerColor)
-                GameBoard.Selected = target;
-            else if (GameBoard.Selected == target)
-                GameBoard.Selected = null;
-            else if (GameBoard.Selected != null)
-                if (GameBoard.TryMove(GameBoard.Selected, target))
-                    ThreadPool.QueueUserWorkItem(o =>
-                    {
-                        if (GameBoard.PlayedByEngine.B && GameBoard.CurrentPlayerColor == GameEntities.PieceColor.Black)
-                            GameBoard.Engine.MakeEngineMove(GameBoard);
-                        if (GameBoard.PlayedByEngine.W && GameBoard.CurrentPlayerColor == GameEntities.PieceColor.White)
-                            GameBoard.Engine.MakeEngineMove(GameBoard);
-                    });
 
+                // eigener Select für Promotion bzw. RenderTile mit Onclick param
+                if (GameBoard.Promotion == true)
+                {
+                    GameBoard.Board[GameBoard.Selected.Position].Piece = target.Piece;
+                    GameBoard.Board[GameBoard.Selected.Position].Piece.Position = GameBoard.Selected.Position;
+                    GameBoard.Selected = null;
+                    GameBoard.Promotion = false;
+                    return;
+                }
+                if (GameBoard.Selected == null && target.ContainsPiece && target.Piece.Color == GameBoard.CurrentPlayerColor)
+                    GameBoard.Selected = target;
+                else if (GameBoard.Selected == target)
+                    GameBoard.Selected = null;
+                else if (GameBoard.Selected != null)
+                    if (GameBoard.TryMove(GameBoard.Selected, target))
+                        ThreadPool.QueueUserWorkItem(o =>
+                        {
+                            if (GameBoard.PlayedByEngine.B && GameBoard.CurrentPlayerColor == GameEntities.PieceColor.Black)
+                                GameBoard.TryEngineMove();
+                            if (GameBoard.PlayedByEngine.W && GameBoard.CurrentPlayerColor == GameEntities.PieceColor.White)
+                                GameBoard.TryEngineMove();
+                        });
+
+            }
         }
 
     }

@@ -25,6 +25,14 @@ namespace VnodeTest.GameEntities
         private int HalfMoveCounter { get; set; }
         public EngineControl Engine { get; } = new EngineControl();
         public (bool W, bool B) PlayedByEngine { get; set; }
+        public string EngineMove { get; set; }
+        private static int ClockTime { get; } = 30;
+        public TimeSpan GameClockWhite { get; set; } = TimeSpan.FromSeconds(ClockTime);
+        public TimeSpan GameClockBlack { get; set; } = TimeSpan.FromSeconds(ClockTime);
+        private TimeSpan ElapsedWhite { get; set; }
+        private TimeSpan ElapsedBlack { get; set; }
+        private DateTime SavedTime { get; set; }
+
 
         public Tile this[int x, int y]
         {
@@ -37,11 +45,38 @@ namespace VnodeTest.GameEntities
                 Board[index] = new Tile(index);
             PlayedByEngine = (false, true);
             PutPiecesInStartingPosition();
+            SavedTime = DateTime.Now;
+            GameClocks();
         }
 
         public Gameboard(IEnumerable<Tile> collection)
         {
             Board = collection.ToArray();
+        }
+
+        public void TryEngineMove()
+        {
+            EngineMove = Engine.ParseEngineMove(this);
+            var _engineMove = GetCoordinates(EngineMove);
+            TryMove(Board[_engineMove.start], Board[_engineMove.target]);
+            if (EngineMove.Length >= 5)
+                Board[_engineMove.target].Piece = EngineMove[4] switch
+                {
+                    'q' => new Queen(_engineMove.target, CurrentPlayerColor),
+                    'n' => new Knight(_engineMove.target, CurrentPlayerColor),
+                    'b' => new Bishop(_engineMove.target, CurrentPlayerColor),
+                    'r' => new Rook(_engineMove.target, CurrentPlayerColor),
+                    _ => default
+                };
+        }
+
+        private static (int start, int target) GetCoordinates(string input)
+        {
+            var startX = Gameboard.ParseStringXToInt(input[0].ToString());
+            var startY = Gameboard.ParseStringYToInt(input[1].ToString());
+            var targetX = Gameboard.ParseStringXToInt(input[2].ToString());
+            var targetY = Gameboard.ParseStringYToInt(input[3].ToString());
+            return (startX + startY * 8, targetX + targetY * 8);
         }
 
         public string GetFeNotation()
@@ -207,11 +242,54 @@ namespace VnodeTest.GameEntities
             return false;
         }
 
+        public void GameClocks()
+        {
+            //TODO: 2 clocks, eine  fürs UI, eine für den gewinn...sync wann immer die farbe gewechselt wird
+
+            ThreadPool.QueueUserWorkItem(o =>
+            {
+                while (GameClockWhite.TotalSeconds >= 0 && GameClockBlack.TotalSeconds >= 0)
+                {
+                    Thread.Sleep(1000);
+                    if (CurrentPlayerColor == PieceColor.White)
+                        GameClockWhite -= TimeSpan.FromMilliseconds(1000);
+                    if (CurrentPlayerColor == PieceColor.Black)
+                        GameClockBlack -= TimeSpan.FromMilliseconds(1000);
+                }
+                if (GameClockBlack <= TimeSpan.Zero)
+                {
+                    Winner = PieceColor.White;
+                    GameOver = true;
+                }
+                else
+                {
+                    Winner = PieceColor.Black;
+                    GameOver = true;
+                }
+            });
+        }
+
+        public void CorrectGameClocks()
+        {
+            if (CurrentPlayerColor == PieceColor.White)
+            {
+                ElapsedBlack -= DateTime.Now - SavedTime;
+                GameClockBlack = TimeSpan.FromSeconds(ClockTime) + ElapsedBlack;
+            }
+            else
+            {
+                ElapsedWhite -= DateTime.Now - SavedTime;
+                GameClockWhite = TimeSpan.FromSeconds(ClockTime) + ElapsedWhite;
+            }
+            SavedTime = DateTime.Now;
+        }
+
         private void ActionsAfterMoveSuccess(Tile target)
         {
             Selected = null;
             TryEnablePromotion(target);
             CurrentPlayerColor = InverseColor();
+            CorrectGameClocks();
             if (CurrentPlayerColor == PieceColor.White)
                 MoveCounter++;
             if (CheckForGameOver())

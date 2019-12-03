@@ -9,10 +9,12 @@ using static ACL.UI.React.DOM;
 
 namespace VnodeTest.GameEntities
 {
+    //TODO: Select players/engine in gameboard
+    //TODO: implement gameclock
     public class EngineControl
     {
         public Process Engine { get; }
-        public string EngineMove;
+        public BasePiece Promotion { get; set; }
         public EngineControl()
         {
             var startinfo = new ProcessStartInfo("C:\\Users\\eisenschenk\\Downloads\\stockfish-10-win\\Windows\\stockfish_10_x64.exe")
@@ -24,7 +26,7 @@ namespace VnodeTest.GameEntities
             };
             Engine = Process.Start(startinfo);
         }
-        public void MakeEngineMove(Gameboard gameboard)
+        public string ParseEngineMove(Gameboard gameboard)
         {
             var output = string.Empty;
             Engine.StandardInput.WriteLine($"position fen \"{gameboard.GetFeNotation()}\"");
@@ -34,21 +36,7 @@ namespace VnodeTest.GameEntities
                 output = Engine.StandardOutput.ReadLine();
             output = output.Remove(0, 8);
             var _output = output.Split();
-            EngineMove = _output[1];
-            var XY = GetCoordinates(EngineMove);
-            gameboard.TryMove(gameboard.Board[XY.start], gameboard.Board[XY.target]);
-        }
-
-
-        private static (int start, int target) GetCoordinates(string input)
-        {
-            var startX = Gameboard.ParseStringXToInt(input[0].ToString());
-            var startY = Gameboard.ParseStringYToInt(input[1].ToString());
-            var targetX = Gameboard.ParseStringXToInt(input[2].ToString());
-            var targetY = Gameboard.ParseStringYToInt(input[3].ToString());
-            return (startX + startY * 8, targetX + targetY * 8);
-        }
-
-
+            return _output[1];
+        }       
     }
 }
