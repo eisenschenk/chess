@@ -1,8 +1,11 @@
-﻿using System;
+﻿using ACL.UI.React;
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace VnodeTest.GameEntities
@@ -18,6 +21,10 @@ namespace VnodeTest.GameEntities
         public int EnPassantTarget { get; set; }
         public (BasePiece start, Tile target) Lastmove { get; set; }
         public bool EnPassantPossible { get; set; }
+        private int MoveCounter { get; set; } = 1;
+        private int HalfMoveCounter { get; set; }
+        public EngineControl Engine { get; } = new EngineControl();
+        public (bool W, bool B) PlayedByEngine { get; set; }
 
         public Tile this[int x, int y]
         {
@@ -28,12 +35,85 @@ namespace VnodeTest.GameEntities
         {
             for (int index = 0; index < 64; index++)
                 Board[index] = new Tile(index);
+            PlayedByEngine = (false, true);
             PutPiecesInStartingPosition();
         }
 
         public Gameboard(IEnumerable<Tile> collection)
         {
             Board = collection.ToArray();
+        }
+
+        public string GetFeNotation()
+        {
+            int emptyCount = 0;
+            string output = string.Empty;
+            foreach (Tile tile in Board)
+            {
+                if (tile.PositionXY.X % 8 == 0 && tile.PositionXY.Y >= 1)
+                {
+                    if (emptyCount != 0)
+                    {
+                        output += emptyCount.ToString();
+                        emptyCount = 0;
+                    }
+                    output += "/";
+                }
+                if (!tile.ContainsPiece)
+                    emptyCount++;
+
+                if (tile.ContainsPiece)
+                {
+                    if (emptyCount != 0)
+                        output += emptyCount.ToString();
+                    emptyCount = 0;
+                    output += tile.Piece.Value switch
+                    {
+                        PieceValue.King => tile.Piece.Color == PieceColor.White ? "K" : "k",
+                        PieceValue.Queen => tile.Piece.Color == PieceColor.White ? "Q" : "q",
+                        PieceValue.Bishop => tile.Piece.Color == PieceColor.White ? "B" : "b",
+                        PieceValue.Knight => tile.Piece.Color == PieceColor.White ? "N" : "n",
+                        PieceValue.Rook => tile.Piece.Color == PieceColor.White ? "R" : "r",
+                        PieceValue.Pawn => tile.Piece.Color == PieceColor.White ? "P" : "p",
+                        _ => throw new Exception("error FEN piece.value switch")
+                    };
+                }
+            }
+            output += CurrentPlayerColor == PieceColor.White ? " w " : " b ";
+            output += GetPossibleCastles();
+            output += EnPassantPossible ? $" {ParseIntToString(EnPassantTarget)} " : " - ";
+            output += $"{HalfMoveCounter} ";
+            output += $"{MoveCounter}";
+            return output;
+        }
+
+        private string GetPossibleCastles()
+        {
+            string CheckCastle(int king, int rook)
+            {
+                string _output = string.Empty;
+                if (Board[rook].ContainsPiece && !Board[rook].Piece.HasMoved
+                    && Board[king].ContainsPiece && !Board[king].Piece.HasMoved)
+                    if (Board[king].Piece.Color == PieceColor.White)
+                    {
+                        if (king > rook)
+                            return _output += "Q";
+                        else
+                            return _output += "K";
+                    }
+                    else
+                    {
+                        if (king > rook)
+                            return _output += "q";
+                        else
+                            return _output += "k";
+                    }
+                return _output;
+            }
+            string output = CheckCastle(60, 63);
+            output += CheckCastle(60, 56);
+            output += CheckCastle(4, 7);
+            return output += CheckCastle(4, 0);
         }
 
         private void PutPiecesInStartingPosition()
@@ -65,26 +145,24 @@ namespace VnodeTest.GameEntities
 
         public bool TryCastling(Tile start, Tile target)
         {
-            //some enemy piece might be standing next to the king, rooks potentialmoves dont prevent castling ...
-            if (target.ContainsPiece)
-                if (target.Piece is Rook && start.Piece is King
-                //both didnt move
-                && !target.Piece.HasMoved && !start.Piece.HasMoved
-                //same color 
-                && start.Piece.Color == target.Piece.Color
-                //nothing between king and rook, +/- 1 for either left or rright rook
-                && (target.Piece.GetStraightLines(this).Contains(start.Piece.Position + 1) || target.Piece.GetStraightLines(this).Contains(start.Piece.Position - 1)))
+            if (start.ContainsPiece && start.Piece is King)
+            {
+                if (Math.Abs(target.PositionXY.X - start.PositionXY.X) == 2)
                 {
                     //direction hack => target either left or right rook
                     int direction = 1;
-                    if (start.Piece.Position > target.Piece.Position)
+                    if (start.Piece.Position > target.Position)
                         direction *= -1;
                     //moving king&rook
                     MovePiece(start, Board[start.Position + 2 * direction]);
-                    MovePiece(target, Board[start.Position + direction]);
-                    Selected = null;
+                    if (direction > 0)
+                        MovePiece(Board[3 * direction + start.Position], Board[start.Position + direction]);
+                    else
+                        MovePiece(Board[4 * direction + start.Position], Board[start.Position + direction]);
+                    ActionsAfterMoveSuccess(target);
                     return true;
                 }
+            }
             return false;
         }
 
@@ -117,23 +195,38 @@ namespace VnodeTest.GameEntities
 
                 if (!start.Piece.GetValidMovements(this).Contains(target.Position))
                     return false;
+                if (target.ContainsPiece || start.Piece is Pawn)
+                    HalfMoveCounter = 0;
+                else
+                    HalfMoveCounter++;
                 CheckForPossibleEnPassant(start, target);
                 MovePiece(start, target);
-                Selected = null;
-                TryEnablePromotion(target);
-                CurrentPlayerColor = InverseColor();
-                CheckForGameOver();
+                ActionsAfterMoveSuccess(target);
                 return true;
             }
             return false;
         }
 
-        public void CheckForGameOver()
+        private void ActionsAfterMoveSuccess(Tile target)
+        {
+            Selected = null;
+            TryEnablePromotion(target);
+            CurrentPlayerColor = InverseColor();
+            if (CurrentPlayerColor == PieceColor.White)
+                MoveCounter++;
+            if (CheckForGameOver())
+            {
+                GameOver = true;
+                Winner = InverseColor();
+            }
+        }
+
+        public bool CheckForGameOver()
         {
             foreach (Tile tile in Board.Where(t => t.ContainsPiece && t.Piece.Color == CurrentPlayerColor))
                 if (tile.Piece.GetValidMovements(this).Any())
-                    return;
-            GameOver = true;
+                    return false;
+            return true;
         }
 
         private void MovePiece(Tile start, Tile target)
@@ -166,6 +259,7 @@ namespace VnodeTest.GameEntities
             if (notation.Contains("0-0") || notation.Contains("O-O"))
             {
                 var king = _pieces.Where(k => k.Piece is King).Single();
+                // implement +
                 if (notation == "0-0" || notation == "O-O")
                     TryCastling(king, this[king.Piece.PositionXY.X + 3, king.Piece.PositionXY.Y]);
                 else
@@ -191,21 +285,22 @@ namespace VnodeTest.GameEntities
             return _pieces;
         }
 
+        //string input statt match
         private IEnumerable<Tile> GetCorrectSourceX(Match match, IEnumerable<Tile> _pieces)
         {
             _pieces = _pieces.Where(x =>
-            match.Groups["sourceX"].Value != ""
-            ? x.Piece.PositionXY.X == ParseStringXToInt(match.Groups["sourceX"].Value)
-            : x.ContainsPiece);
+                match.Groups["sourceX"].Value != ""
+                    ? x.Piece.PositionXY.X == ParseStringXToInt(match.Groups["sourceX"].Value)
+                    : x.ContainsPiece);
             return _pieces;
         }
 
         private IEnumerable<Tile> GetCorrectSourceY(Match match, IEnumerable<Tile> _pieces)
         {
             _pieces = _pieces.Where(y =>
-            match.Groups["sourceY"].Value != ""
-            ? y.Piece.PositionXY.Y == ParseStringYToInt(match.Groups["sourceY"].Value)
-            : y.ContainsPiece);
+                match.Groups["sourceY"].Value != ""
+                    ? y.Piece.PositionXY.Y == ParseStringYToInt(match.Groups["sourceY"].Value)
+                    : y.ContainsPiece);
             return _pieces;
         }
 
@@ -227,7 +322,7 @@ namespace VnodeTest.GameEntities
                         "=R" => new Rook(destination.Position, InverseColor()),
                         "=N" => new Knight(destination.Position, InverseColor()),
                         "=B" => new Bishop(destination.Position, InverseColor()),
-                        _ => default
+                        _ => throw new Exception("error in promotion")
                     };
                     return true;
                 }
@@ -242,7 +337,7 @@ namespace VnodeTest.GameEntities
             return _pieces;
         }
 
-        private bool TryEndGame(string notation, IEnumerable<Tile> _pieces)
+        private bool TryEndGame(string notation)
         {
             if (notation.Contains("1-0") || notation.Contains("0-1") || notation.Contains("½–½"))
             {
@@ -260,7 +355,7 @@ namespace VnodeTest.GameEntities
 
         }
 
-        public bool TryANtoMyN(string notation)
+        public bool TryAlgebraicNotaionToMyNotaion(string notation)
         {
             var match = Regex.Match(notation, "^(?<piece>[KQRNB]?)(?<sourceX>[a-h]?)(?<sourceY>[1-8]?)(?<captures>x?)(?<destination>[a-h][1-8])(?<promotion>(=[QRNB])?)(?<check>\\+?)(?<mate>#?)$",
                     RegexOptions.Singleline & RegexOptions.ExplicitCapture);
@@ -268,7 +363,7 @@ namespace VnodeTest.GameEntities
             //_pieces where !=empty && correct color
             var _pieces = Board.Where(p => p.ContainsPiece && p.Piece.Color == CurrentPlayerColor);
 
-            if (TryEndGame(notation, _pieces))
+            if (TryEndGame(notation))
                 return true;
             if (TryAnCastling(notation, _pieces))
                 return true;
@@ -290,14 +385,36 @@ namespace VnodeTest.GameEntities
         }
 
 
-        private int ParseStringXToInt(string input)
+        public static int ParseStringXToInt(string input)
         {
             var c = input[0];
             if (c < 'a' || c > 'h')
                 throw new Exception("out of bounds X");
             return c - 'a';
         }
-        private int ParseStringYToInt(string input)
+
+        private static string ParseIntToString(int index)
+        {
+            var x = index % 8;
+            var y = index / 8;
+            var yOut = y switch
+            {
+                0 => "8",
+                1 => "7",
+                2 => "6",
+                3 => "5",
+                4 => "4",
+                5 => "3",
+                6 => "2",
+                7 => "1",
+                _ => throw new Exception("error in int to string conversion y-value")
+            };
+            var xOut = ('a' + x).ToString();
+            return xOut + yOut;
+        }
+
+
+        public static int ParseStringYToInt(string input)
         {
             var c = input[input.Length - 1];
             if (c < '1' || c > '8')

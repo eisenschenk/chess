@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using static ACL.UI.React.DOM;
 
@@ -11,35 +12,50 @@ namespace VnodeTest
     public class GameboardController
     {
         public GameEntities.Gameboard GameBoard;
-
+        private TimeSpan delay = TimeSpan.FromMilliseconds(300);
+        private VNode RefreshReference;
 
 
         public GameboardController()
         {
             GameBoard = new GameEntities.Gameboard();
+            ThreadPool.QueueUserWorkItem(o =>
+            {
+                while (true)
+                {
+                    RefreshReference?.Refresh(delay);
+                }
+            });
         }
 
         public VNode Render()
         {
             if (GameBoard.GameOver)
                 return RenderGameOver();
-            return Div(
+            return RefreshReference = Div(
                 GameBoard.Promotion ? RenderPromotionSelection() : RenderBoard(GameBoard)
             );
         }
         //remember Enumerable range
         private VNode RenderBoard(GameEntities.Gameboard board)
         {
-            return Fragment(Enumerable.Range(0, 8)
-                .Select(rowx => Row(board.Board.Where(x => x.Position / 8 == rowx)
-                    .Select(t => RenderTile(t)))));
+            return Div(
+                Fragment(Enumerable.Range(0, 8)
+                    .Select(rowx => Row(board.Board.Where(x => x.Position / 8 == rowx)
+                    .Select(t => RenderTile(t))))),
+                Text($"EngineMove: {GameBoard.Engine.EngineMove}")
+                );
         }
 
         //remember onclick
         private VNode RenderTile(GameEntities.Tile tile)
         {
+            Style lastMove = null;
+            if (GameBoard.Lastmove.start != null
+                && (tile.Position == GameBoard.Lastmove.start.Position || tile.Position == GameBoard.Lastmove.target.Position))
+                lastMove = Styles.BCred;
             return Div(
-                tile.Style & (tile == GameBoard.Selected ? Styles.Selected : tile.BorderStyle),
+                 tile.Style & (tile == GameBoard.Selected ? Styles.Selected : tile.BorderStyle) & lastMove,
                 () => Select(tile),
                 tile.ContainsPiece ? Text(tile.Piece.Sprite, Styles.FontSize3) : null
             );
@@ -83,13 +99,21 @@ namespace VnodeTest
                 GameBoard.Promotion = false;
                 return;
             }
-            if (GameBoard.Selected == null && target.ContainsPiece /*&& target.Piece.Color == CurrentPlayerColor*/)
+            if (GameBoard.Selected == null && target.ContainsPiece && target.Piece.Color == GameBoard.CurrentPlayerColor)
                 GameBoard.Selected = target;
             else if (GameBoard.Selected == target)
                 GameBoard.Selected = null;
             else if (GameBoard.Selected != null)
-                GameBoard.TryMove(GameBoard.Selected, target);
+                if (GameBoard.TryMove(GameBoard.Selected, target))
+                    ThreadPool.QueueUserWorkItem(o =>
+                    {
+                        if (GameBoard.PlayedByEngine.B && GameBoard.CurrentPlayerColor == GameEntities.PieceColor.Black)
+                            GameBoard.Engine.MakeEngineMove(GameBoard);
+                        if (GameBoard.PlayedByEngine.W && GameBoard.CurrentPlayerColor == GameEntities.PieceColor.White)
+                            GameBoard.Engine.MakeEngineMove(GameBoard);
+                    });
 
         }
+
     }
 }

@@ -28,7 +28,6 @@ namespace VnodeTest.GameEntities
                 if (_Position != StartPosition)
                     HasMoved = true;
                 _Position = value;
-
             }
         }
 
@@ -69,7 +68,7 @@ namespace VnodeTest.GameEntities
         //distance -> -1 
         private IEnumerable<(int X, int Y)> GetPotentialMoves((int X, int Y) direction, Gameboard gameboard, int distance = 7)
         {
-            var currentTarget = (X: PositionXY.Item1 + direction.Item1, Y: PositionXY.Item2 + direction.Item2);
+            var currentTarget = (X: PositionXY.X + direction.X, Y: PositionXY.Y + direction.Y);
 
             while (distance > 0
                 && currentTarget.X < 8
@@ -122,10 +121,7 @@ namespace VnodeTest.GameEntities
         {
             return GetPotentialMovements(gameboard).Where(m =>
             {
-                var futureGameBoard = gameboard.Copy();
-                futureGameBoard.Board[m].Piece = Copy();
-                futureGameBoard.Board[m].Piece.Position = futureGameBoard.Board[m].Position;
-                futureGameBoard.Board[Position].Piece = null;
+                var futureGameBoard = HypotheticalMove(gameboard, m);
                 var kingSameColorPosition = futureGameBoard.Board
                     .Where(t => t.ContainsPiece && t.Piece.Color == Color && t.Piece is King)
                     .Single().Piece.Position;
@@ -133,6 +129,15 @@ namespace VnodeTest.GameEntities
 
                 return !enemyPieces.SelectMany(t => t.Piece.GetPotentialMovements(futureGameBoard)).Contains(kingSameColorPosition);
             });
+        }
+
+        public Gameboard HypotheticalMove(Gameboard gameboard, int target)
+        {
+            var futureGameBoard = gameboard.Copy();
+            futureGameBoard.Board[target].Piece = Copy();
+            futureGameBoard.Board[target].Piece.Position = futureGameBoard.Board[target].Position;
+            futureGameBoard.Board[Position].Piece = null;
+            return futureGameBoard;
         }
 
         public abstract BasePiece Copy();

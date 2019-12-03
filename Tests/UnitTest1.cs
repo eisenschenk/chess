@@ -36,7 +36,7 @@ namespace Tests
             var moves = moveSource.Split('.');
             var gameboard = new Gameboard();
             foreach (string move in moves)
-                gameboard.TryANtoMyN(move);
+                gameboard.TryAlgebraicNotaionToMyNotaion(move);
         }
     }
 }

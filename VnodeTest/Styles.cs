@@ -19,10 +19,6 @@ namespace VnodeTest
                 BackgroundColor("black")
             ),
 
-            Def(BCred,
-                BackgroundColor("red")
-            ),
-
             Def(TCblack,
                 Color("black")
             ),
@@ -326,6 +322,10 @@ namespace VnodeTest
 
             Def(W75,
                 Width("75%")
+            ),
+
+             Def(BCred,
+                BackgroundColor("red")
             )
 
         );
