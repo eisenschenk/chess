@@ -14,8 +14,8 @@ namespace VnodeTest.GameEntities
         public PieceValue Value { get; set; }
         public string Sprite => GetSprite();
         public (int X, int Y) PositionXY => (Position % 8, Position / 8);
-        public int StartPosition { get; } //von color abh. 
-        public bool HasMoved { get; private set; }
+        public int StartPosition { get; set; } //von color abh. 
+        public bool HasMoved { get; set; }
         private int _Position;
         public int Position
         {

@@ -36,8 +36,8 @@ namespace VnodeTest
             //SomeDataHandler = new SomeData.Handler(Repsitory, bus);
         }
 
-        public SomeDataController CreateSomeDataController() =>
-            new SomeDataController();
+        public GameboardController CreateGameboardController() =>
+            new GameboardController();
     }
 
 }

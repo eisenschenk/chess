@@ -13,6 +13,13 @@ namespace VnodeTest.GameEntities
             Value = PieceValue.King;
         }
 
+        //public King(int position, PieceColor color, bool hasMoved, int startPosition) : base(position, color)
+        //{
+        //    Value = PieceValue.King;
+        //    HasMoved = hasMoved;
+        //    StartPosition = startPosition;
+        //}
+
         protected override IEnumerable<int> GetPotentialMovements(Gameboard gameboard)
         {
             return GetDiagonals(gameboard, 1).Concat(GetStraightLines(gameboard, 1)).Concat(GetCastlingPositions(gameboard));
@@ -20,39 +27,38 @@ namespace VnodeTest.GameEntities
 
         private IEnumerable<int> GetCastlingPositions(Gameboard gameboard)
         {
-            bool EmptyAndNoCheck(int direction)
+            bool EmptyAndNoCheck(int direction, Tile rookTile)
             {
-                if (direction < Position)
+                if (!rookTile.ContainsPiece || !(rookTile.Piece is Rook) || rookTile.Piece.HasMoved)
+                    return false;
+
+                if (direction < 0)
                 {
-                    var rookTile = gameboard.Board[Position - 4];
-                    if (HasMoved || !rookTile.ContainsPiece || !(rookTile.Piece is Rook) || rookTile.Piece.HasMoved)
-                        return false;
-                    for (int index = Position + direction; index > Position - 4; index--)
+                    for (int index = Position + direction; index >= rookTile.Position; index--)
                         if (gameboard.Board[index].ContainsPiece)
                             return false;
-                    if (gameboard.CheckForGameOver()
-                    || HypotheticalMove(gameboard, Position - 1).CheckForGameOver() || HypotheticalMove(gameboard, Position - 2).CheckForGameOver())
-                        return false;
-                    return true;
                 }
                 else
                 {
-                    var rookTile = gameboard.Board[Position + 3];
-                    if (HasMoved || !rookTile.ContainsPiece || !(rookTile.Piece is Rook) || rookTile.Piece.HasMoved)
-                        return false;
-                    for (int index = Position + direction; index > Position + 3; index++)
+                    for (int index = Position + direction; index <= rookTile.Position; index++)
                         if (gameboard.Board[index].ContainsPiece)
                             return false;
-                    if (gameboard.CheckForGameOver()
-                        || HypotheticalMove(gameboard, Position + 1).CheckForGameOver() || HypotheticalMove(gameboard, Position + 2).CheckForGameOver())
-                        return false;
-                    return true;
                 }
+                if (gameboard.CheckDetection(Color)
+                    || HypotheticalMove(gameboard, Position + direction).CheckDetection(Color) || HypotheticalMove(gameboard, Position + 2 * direction).CheckDetection(Color))
+                    return false;
+                return true;
             }
-            if (EmptyAndNoCheck(-1))
-                yield return Position - 2;
-            if (EmptyAndNoCheck(1))
-                yield return Position + 2;
+            if (!HasMoved && (Position == 4 || Position == 60))
+            {
+                var rookTileLeft = gameboard.Board[Position - 4];
+                var rookTileRight = gameboard.Board[Position + 3];
+
+                if (EmptyAndNoCheck(-1, rookTileLeft))
+                    yield return Position - 2;
+                if (EmptyAndNoCheck(1, rookTileRight))
+                    yield return Position + 2;
+            }
         }
 
         public override BasePiece Copy() => new King(Position, Color);

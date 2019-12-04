@@ -72,13 +72,14 @@
     <Compile Include="GameEntities\Queen.cs" />
     <Compile Include="GameEntities\Rook.cs" />
     <Compile Include="GameEntities\Tile.cs" />
+    <Compile Include="GameRepository.cs" />
     <Compile Include="PaginationComponent.cs" />
+    <Compile Include="GamemodeController.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RootController.cs" />
     <Compile Include="SearchbarComponent.cs" />
     <Compile Include="Session.cs" />
-    <Compile Include="SomeDataController.cs" />
     <Compile Include="Styles.cs" />
     <Compile Include="WatchComponent.cs" />
   </ItemGroup>

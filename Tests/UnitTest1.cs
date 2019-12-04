@@ -34,7 +34,7 @@ namespace Tests
         public void TestGame(string moveSource)
         {
             var moves = moveSource.Split('.');
-            var gameboard = new Gameboard();
+            var gameboard = new Gameboard(TimeSpan.FromDays(20));
             foreach (string move in moves)
                 gameboard.TryAlgebraicNotaionToMyNotaion(move);
         }

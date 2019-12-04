@@ -16,12 +16,12 @@ namespace VnodeTest
         }
 
         //public VNode Render() => CurrentContent();
-        public VNode Render() => SomeDataController.Render();
+        public VNode Render() => GameboardController.Render();
 
-        private SomeDataController _SomeDataController;
-        private SomeDataController SomeDataController =>
-        _SomeDataController ??
-        (_SomeDataController = ((Application)Application.Instance).AppContext.CreateSomeDataController());
+        private GameboardController _GameboardController;
+        private GameboardController GameboardController =>
+        _GameboardController ??
+        (_GameboardController = ((Application)Application.Instance).AppContext.CreateGameboardController());
     }
 
 }

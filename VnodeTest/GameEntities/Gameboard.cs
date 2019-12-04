@@ -14,8 +14,8 @@ namespace VnodeTest.GameEntities
     {
         public Tile[] Board { get; set; } = new Tile[64];
         public bool Promotion { get; set; }
-        public bool GameOver { get; set; }
-        public PieceColor Winner { get; set; }
+        public bool GameOver => Winner.HasValue;
+        public PieceColor? Winner { get; set; }
         public PieceColor CurrentPlayerColor { get; set; } = PieceColor.White;
         public Tile Selected { get; set; }
         public int EnPassantTarget { get; set; }
@@ -24,29 +24,31 @@ namespace VnodeTest.GameEntities
         private int MoveCounter { get; set; } = 1;
         private int HalfMoveCounter { get; set; }
         public EngineControl Engine { get; } = new EngineControl();
-        public (bool W, bool B) PlayedByEngine { get; set; }
+        public (bool W, bool B) PlayedByEngine { get; set; } = (W: false, B: false);
         public string EngineMove { get; set; }
-        private static int ClockTime { get; } = 30;
-        public TimeSpan GameClockWhite { get; set; } = TimeSpan.FromSeconds(ClockTime);
-        public TimeSpan GameClockBlack { get; set; } = TimeSpan.FromSeconds(ClockTime);
-        private TimeSpan ElapsedWhite { get; set; }
-        private TimeSpan ElapsedBlack { get; set; }
-        private DateTime SavedTime { get; set; }
 
+        private TimeSpan _WhiteClock;
+        public TimeSpan WhiteClock { get => _WhiteClock; private set => _WhiteClock = value; }
+
+        private TimeSpan _BlackClock;
+        public TimeSpan BlackClock { get => _BlackClock; private set => _BlackClock = value; }
+        private DateTime LastClockUpdate;
 
         public Tile this[int x, int y]
         {
             get => Board[y * 8 + x];
             set => Board[y * 8 + x] = value;
         }
-        public Gameboard()
+        public Gameboard(TimeSpan playerClockTime)
         {
             for (int index = 0; index < 64; index++)
                 Board[index] = new Tile(index);
-            PlayedByEngine = (false, true);
             PutPiecesInStartingPosition();
-            SavedTime = DateTime.Now;
-            GameClocks();
+            LastClockUpdate = DateTime.Now;
+            WhiteClock = playerClockTime;
+            BlackClock = playerClockTime;
+            if (CurrentPlayerColor == PieceColor.White && PlayedByEngine.W)
+                TryEngineMove();
         }
 
         public Gameboard(IEnumerable<Tile> collection)
@@ -56,26 +58,29 @@ namespace VnodeTest.GameEntities
 
         public void TryEngineMove()
         {
-            EngineMove = Engine.ParseEngineMove(this);
-            var _engineMove = GetCoordinates(EngineMove);
-            TryMove(Board[_engineMove.start], Board[_engineMove.target]);
-            if (EngineMove.Length >= 5)
-                Board[_engineMove.target].Piece = EngineMove[4] switch
-                {
-                    'q' => new Queen(_engineMove.target, CurrentPlayerColor),
-                    'n' => new Knight(_engineMove.target, CurrentPlayerColor),
-                    'b' => new Bishop(_engineMove.target, CurrentPlayerColor),
-                    'r' => new Rook(_engineMove.target, CurrentPlayerColor),
-                    _ => default
-                };
+            ThreadPool.QueueUserWorkItem(o =>
+            {
+                EngineMove = Engine.ParseEngineMove(this);
+                var _engineMove = GetCoordinates(EngineMove);
+                TryMove(Board[_engineMove.start], Board[_engineMove.target]);
+                if (EngineMove.Length >= 5)
+                    Board[_engineMove.target].Piece = EngineMove[4] switch
+                    {
+                        'q' => new Queen(_engineMove.target, CurrentPlayerColor),
+                        'n' => new Knight(_engineMove.target, CurrentPlayerColor),
+                        'b' => new Bishop(_engineMove.target, CurrentPlayerColor),
+                        'r' => new Rook(_engineMove.target, CurrentPlayerColor),
+                        _ => default
+                    };
+            });
         }
 
         private static (int start, int target) GetCoordinates(string input)
         {
-            var startX = Gameboard.ParseStringXToInt(input[0].ToString());
-            var startY = Gameboard.ParseStringYToInt(input[1].ToString());
-            var targetX = Gameboard.ParseStringXToInt(input[2].ToString());
-            var targetY = Gameboard.ParseStringYToInt(input[3].ToString());
+            var startX = ParseStringXToInt(input[0].ToString());
+            var startY = ParseStringYToInt(input[1].ToString());
+            var targetX = ParseStringXToInt(input[2].ToString());
+            var targetY = ParseStringYToInt(input[3].ToString());
             return (startX + startY * 8, targetX + targetY * 8);
         }
 
@@ -191,10 +196,9 @@ namespace VnodeTest.GameEntities
                     //moving king&rook
                     MovePiece(start, Board[start.Position + 2 * direction]);
                     if (direction > 0)
-                        MovePiece(Board[3 * direction + start.Position], Board[start.Position + direction]);
+                        MovePieceInternal(Board[3 * direction + start.Position], Board[start.Position + direction]);
                     else
-                        MovePiece(Board[4 * direction + start.Position], Board[start.Position + direction]);
-                    ActionsAfterMoveSuccess(target);
+                        MovePieceInternal(Board[4 * direction + start.Position], Board[start.Position + direction]);
                     return true;
                 }
             }
@@ -225,78 +229,55 @@ namespace VnodeTest.GameEntities
 
         public bool TryMove(Tile start, Tile target)
         {
-            if (!TryCastling(start, target))
-            {
-
-                if (!start.Piece.GetValidMovements(this).Contains(target.Position))
-                    return false;
-                if (target.ContainsPiece || start.Piece is Pawn)
-                    HalfMoveCounter = 0;
-                else
-                    HalfMoveCounter++;
-                CheckForPossibleEnPassant(start, target);
-                MovePiece(start, target);
-                ActionsAfterMoveSuccess(target);
+            if (TryCastling(start, target))
                 return true;
-            }
-            return false;
-        }
 
-        public void GameClocks()
-        {
-            //TODO: 2 clocks, eine  fürs UI, eine für den gewinn...sync wann immer die farbe gewechselt wird
+            if (!start.Piece.GetValidMovements(this).Contains(target.Position))
+                return false;
 
-            ThreadPool.QueueUserWorkItem(o =>
-            {
-                while (GameClockWhite.TotalSeconds >= 0 && GameClockBlack.TotalSeconds >= 0)
-                {
-                    Thread.Sleep(1000);
-                    if (CurrentPlayerColor == PieceColor.White)
-                        GameClockWhite -= TimeSpan.FromMilliseconds(1000);
-                    if (CurrentPlayerColor == PieceColor.Black)
-                        GameClockBlack -= TimeSpan.FromMilliseconds(1000);
-                }
-                if (GameClockBlack <= TimeSpan.Zero)
-                {
-                    Winner = PieceColor.White;
-                    GameOver = true;
-                }
-                else
-                {
-                    Winner = PieceColor.Black;
-                    GameOver = true;
-                }
-            });
-        }
-
-        public void CorrectGameClocks()
-        {
-            if (CurrentPlayerColor == PieceColor.White)
-            {
-                ElapsedBlack -= DateTime.Now - SavedTime;
-                GameClockBlack = TimeSpan.FromSeconds(ClockTime) + ElapsedBlack;
-            }
+            if (target.ContainsPiece || start.Piece is Pawn)
+                HalfMoveCounter = 0;
             else
+                HalfMoveCounter++;
+            CheckForPossibleEnPassant(start, target);
+            MovePiece(start, target);
+            return true;
+        }
+
+        private readonly object UpdateClockLock = new object();
+
+        public void UpdateClocks() => UpdateClocks(false);
+
+        private void UpdateClocks(bool changeCurrentPlayer)
+        {
+            lock (UpdateClockLock)
             {
-                ElapsedWhite -= DateTime.Now - SavedTime;
-                GameClockWhite = TimeSpan.FromSeconds(ClockTime) + ElapsedWhite;
+                var now = DateTime.Now;
+                void updateColor(PieceColor color, ref TimeSpan clock)
+                {
+                    if (CurrentPlayerColor != color)
+                        return;
+                    clock -= now - LastClockUpdate;
+                    if (clock <= TimeSpan.Zero)
+                        Winner = color;
+                }
+                updateColor(PieceColor.Black, ref _BlackClock);
+                updateColor(PieceColor.White, ref _WhiteClock);
+                LastClockUpdate = now;
+                if (changeCurrentPlayer)
+                    CurrentPlayerColor = InverseColor();
             }
-            SavedTime = DateTime.Now;
         }
 
         private void ActionsAfterMoveSuccess(Tile target)
         {
             Selected = null;
             TryEnablePromotion(target);
-            CurrentPlayerColor = InverseColor();
-            CorrectGameClocks();
+            UpdateClocks(changeCurrentPlayer: true);
             if (CurrentPlayerColor == PieceColor.White)
                 MoveCounter++;
             if (CheckForGameOver())
-            {
-                GameOver = true;
                 Winner = InverseColor();
-            }
         }
 
         public bool CheckForGameOver()
@@ -307,6 +288,22 @@ namespace VnodeTest.GameEntities
             return true;
         }
 
+
+        public bool CheckDetection(PieceColor color)
+        {
+            var king = Board.Where(p => p.ContainsPiece && p.Piece.Color == color && p.Piece is King).Single();
+            var enemyMoves = Board.Where(p => p.ContainsPiece && p.Piece.Color != color).SelectMany(m => m.Piece.GetValidMovements(this));
+            if (enemyMoves.Contains(king.Position))
+                return true;
+            return false;
+        }
+
+        private void MovePieceInternal(Tile start, Tile target)
+        {
+            target.Piece = start.Piece;
+            target.Piece.Position = target.Position;
+            start.Piece = null;
+        }
         private void MovePiece(Tile start, Tile target)
         {
             if (start.Piece is Pawn)
@@ -317,17 +314,25 @@ namespace VnodeTest.GameEntities
                     EnPassantTarget = start.PositionXY.X + (start.Piece.Color == PieceColor.Black ? (start.PositionXY.Y + 1) * 8 : (start.PositionXY.Y - 1) * 8);
             }
             Lastmove = (start.Piece.Copy(), target.Copy());
-            target.Piece = start.Piece;
-            target.Piece.Position = target.Position;
-            start.Piece = null;
+            MovePieceInternal(start, target);
+            ActionsAfterMoveSuccess(target);
+
+            if (PlayedByEngine.B && CurrentPlayerColor == PieceColor.Black)
+                TryEngineMove();
+            else if (PlayedByEngine.W && CurrentPlayerColor == PieceColor.White)
+                TryEngineMove();
+
         }
 
         public void TryEnablePromotion(Tile tile)
         {
             if (tile.Piece is Pawn && (tile.Piece.Position > 55 || tile.Piece.Position < 7))
             {
-                Selected = tile;
-                Promotion = true;
+                if ((CurrentPlayerColor == PieceColor.White && PlayedByEngine.W) || (CurrentPlayerColor == PieceColor.Black && PlayedByEngine.B))
+                {
+                    Selected = tile;
+                    Promotion = true;
+                }
             }
         }
 
@@ -339,11 +344,9 @@ namespace VnodeTest.GameEntities
                 var king = _pieces.Where(k => k.Piece is King).Single();
                 // implement +
                 if (notation == "0-0" || notation == "O-O")
-                    TryCastling(king, this[king.Piece.PositionXY.X + 3, king.Piece.PositionXY.Y]);
+                    TryMove(king, this[king.Piece.PositionXY.X + 2, king.Piece.PositionXY.Y]);
                 else
-                    TryCastling(king, this[king.Piece.PositionXY.X - 4, king.Piece.PositionXY.Y]);
-                CurrentPlayerColor = InverseColor();
-                CheckForGameOver();
+                    TryMove(king, this[king.Piece.PositionXY.X - 2, king.Piece.PositionXY.Y]);
                 return true;
             }
             return false;
@@ -426,7 +429,6 @@ namespace VnodeTest.GameEntities
                     "½–½" => PieceColor.Zero,
                     _ => default
                 };
-                GameOver = true;
                 return true;
             }
             return false;
