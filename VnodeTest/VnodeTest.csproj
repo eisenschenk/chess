@@ -64,6 +64,7 @@
     <Compile Include="GameEntities\Bishop.cs" />
     <Compile Include="GameEntities\EngineControl.cs" />
     <Compile Include="GameEntities\Gameboard.cs" />
+    <Compile Include="GameEntities\Gamemode.cs" />
     <Compile Include="GameEntities\King.cs" />
     <Compile Include="GameEntities\Knight.cs" />
     <Compile Include="GameEntities\Pawn.cs" />

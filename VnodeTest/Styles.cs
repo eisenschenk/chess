@@ -104,7 +104,6 @@ namespace VnodeTest
 
             Def(BaseBtn,
                 BorderRadius("5px"),
-                Margin("4px 4px 4px 0px"),
                 Width("fit-content"),
                 Padding("4px")
             ),

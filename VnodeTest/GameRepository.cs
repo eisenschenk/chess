@@ -27,6 +27,7 @@ namespace VnodeTest
 
         private readonly Dictionary<int, Gameboard> Store = new Dictionary<int, Gameboard>();
 
+
         public void AddBoard(int key, Gameboard board) => Store[key] = board;
 
         public bool TryGetBoard(int key, out Gameboard board) => Store.TryGetValue(key, out board);

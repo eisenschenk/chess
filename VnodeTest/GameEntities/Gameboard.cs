@@ -24,8 +24,12 @@ namespace VnodeTest.GameEntities
         private int MoveCounter { get; set; } = 1;
         private int HalfMoveCounter { get; set; }
         public EngineControl Engine { get; } = new EngineControl();
-        public (bool W, bool B) PlayedByEngine { get; set; } = (W: false, B: false);
+        public (bool W, bool B) PlayedByEngine { get; set; }
         public string EngineMove { get; set; }
+        public Gamemode GameMode { get; set; }
+        public bool HasPlayerWhite { get; set; }
+        public bool HasPlayerBlack { get; set; }
+        //public int GameBoardID { get; set; } = 0;
 
         private TimeSpan _WhiteClock;
         public TimeSpan WhiteClock { get => _WhiteClock; private set => _WhiteClock = value; }
