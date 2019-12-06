@@ -99,7 +99,7 @@ namespace VnodeTest
                     ThreadPool.QueueUserWorkItem(o =>
                     {
                         while (!Gameboard.GameOver)
-                            Gameboard.TryEngineMove(Engine.GetEngineMove(Gameboard.GetFeNotation()), Game.PlayedByEngine);
+                            Gameboard.TryEngineMove(Enginemove = Engine.GetEngineMove(Gameboard.GetFeNotation()), Game.PlayedByEngine);
                     });
             }
         }
@@ -114,8 +114,8 @@ namespace VnodeTest
         {
             if (Gameboard == default)
                 return RenderGameModeSelection();
-            if (Gameboard.GameOver)
-                return RenderGameOver();
+            //if (Gameboard.GameOver)
+            //    return RenderGameOver();
             if (Gameboard.IsPromotable)
                 return RenderPromotionSelection();
 
@@ -127,7 +127,8 @@ namespace VnodeTest
                     Game.PlayedByEngine.B == true || Game.PlayedByEngine.W == true ? Text($"EngineMove: {Enginemove}") : null,
                     Text($"Time remaining White: {Gameboard.WhiteClock:hh\\:mm\\:ss}"),
                     Text($"Time remaining Black: {Gameboard.BlackClock:hh\\:mm\\:ss}"),
-                    Text($"Gameroom: {Game.ID}")
+                    Text($"Gameroom: {Game.ID}"),
+                    Gameboard.GameOver ? RenderGameOver() : null
                     );
             else
             {
@@ -139,7 +140,8 @@ namespace VnodeTest
                     Game.PlayedByEngine.B == true || Game.PlayedByEngine.W == true ? Text($"EngineMove: {Enginemove}") : null,
                     Text($"Time remaining White: {Gameboard.WhiteClock:hh\\:mm\\:ss}"),
                     Text($"Time remaining Black: {Gameboard.BlackClock:hh\\:mm\\:ss}"),
-                     Text($"Gameroom: {Game.ID}")
+                    Text($"Gameroom: {Game.ID}"),
+                    Gameboard.GameOver ? RenderGameOver() : null
                    );
             }
         }
@@ -212,15 +214,9 @@ namespace VnodeTest
                         ThreadPool.QueueUserWorkItem(o =>
                         {
                             if (Game.PlayedByEngine.B && Gameboard.CurrentPlayerColor == PieceColor.Black)
-                            {
-                                Enginemove = Engine.GetEngineMove(Gameboard.GetFeNotation());
-                                Gameboard.TryEngineMove(Enginemove);
-                            }
+                                Gameboard.TryEngineMove(Enginemove = Engine.GetEngineMove(Gameboard.GetFeNotation()));
                             else if (Game.PlayedByEngine.W && Gameboard.CurrentPlayerColor == PieceColor.White)
-                            {
-                                Engine.GetEngineMove(Gameboard.GetFeNotation());
-                                Gameboard.TryEngineMove(Enginemove);
-                            }
+                                Gameboard.TryEngineMove(Enginemove = Engine.GetEngineMove(Gameboard.GetFeNotation()));
                         });
                     }
             }

@@ -251,8 +251,11 @@ namespace VnodeTest.GameEntities
 
         public bool CheckForGameOver()
         {
-            if (HalfMoveCounter >= 100)
+            if (HalfMoveCounter >= 50)
+            {
+                Winner = PieceColor.Zero;
                 return true;
+            }
             foreach (Tile tile in Board.Where(t => t.ContainsPiece && t.Piece.Color == CurrentPlayerColor))
                 if (tile.Piece.GetValidMovements(this).Any())
                     return false;
