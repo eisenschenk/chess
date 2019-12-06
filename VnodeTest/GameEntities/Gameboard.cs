@@ -17,7 +17,6 @@ namespace VnodeTest.GameEntities
         public bool GameOver => Winner.HasValue;
         public PieceColor? Winner { get; set; }
         public PieceColor CurrentPlayerColor { get; set; } = PieceColor.White;
-        public Tile Selected { get; set; } // trash
         public int EnPassantTarget { get; set; } = -1;
         public (BasePiece start, Tile target) Lastmove { get; set; }
         private int MoveCounter { get; set; } = 1;
@@ -250,7 +249,6 @@ namespace VnodeTest.GameEntities
 
         private void ActionsAfterMoveSuccess(Tile target)
         {
-            Selected = null;
             TryEnablePromotion(target);
             UpdateClocks(changeCurrentPlayer: true);
             if (CurrentPlayerColor == PieceColor.White)
@@ -312,10 +310,7 @@ namespace VnodeTest.GameEntities
             if (tile.Piece is Pawn && (tile.Piece.Position > 55 || tile.Piece.Position < 7))
             {
                 if ((CurrentPlayerColor == PieceColor.White && !PlayedByEngine.W) || (CurrentPlayerColor == PieceColor.Black && !PlayedByEngine.B))
-                {
-                    Selected = tile;
                     IsPromotable = true;
-                }
             }
         }
 

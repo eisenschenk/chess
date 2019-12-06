@@ -148,7 +148,7 @@ namespace VnodeTest
                 && (tile.Position == Gameboard.Lastmove.start.Position || tile.Position == Gameboard.Lastmove.target.Position))
                 lastMove = Styles.BCred;
             return Div(
-                 tile.Style & (tile == Gameboard.Selected ? Styles.Selected : tile.BorderStyle) & lastMove,
+                 tile.Style & (tile == Selected ? Styles.Selected : tile.BorderStyle) & lastMove,
                 () => Select(tile),
                 tile.ContainsPiece ? Text(tile.Piece.Sprite, Styles.FontSize3) : null
             );
@@ -170,10 +170,10 @@ namespace VnodeTest
         private VNode RenderPromotionSelection()
         {
             Tile[] promotionSelect = new GameEntities.Tile[4];
-            promotionSelect[0] = (new Tile(new Rook(0, Gameboard.Selected.Piece.Color), 0));
-            promotionSelect[1] = (new Tile(new Knight(1, Gameboard.Selected.Piece.Color), 1));
-            promotionSelect[2] = (new Tile(new Bishop(2, Gameboard.Selected.Piece.Color), 2));
-            promotionSelect[3] = (new Tile(new Queen(3, Gameboard.Selected.Piece.Color), 3));
+            promotionSelect[0] = (new Tile(new Rook(0, Selected.Piece.Color), 0));
+            promotionSelect[1] = (new Tile(new Knight(1, Selected.Piece.Color), 1));
+            promotionSelect[2] = (new Tile(new Bishop(2, Selected.Piece.Color), 2));
+            promotionSelect[3] = (new Tile(new Queen(3, Selected.Piece.Color), 3));
             return Div(
                 Styles.M2,
                 Text($"Select Piece you want the Pawn to be promoted to.", Styles.FontSize1p5),
@@ -190,18 +190,20 @@ namespace VnodeTest
                 // eigener Select für Promotion bzw. RenderTile mit Onclick param?
                 if (Gameboard.IsPromotable == true)
                 {
-                    Gameboard.Board[Gameboard.Selected.Position].Piece = target.Piece;
-                    Gameboard.Board[Gameboard.Selected.Position].Piece.Position = Gameboard.Selected.Position;
-                    Gameboard.Selected = null;
+                    Selected = Gameboard.Lastmove.target;
+                    Gameboard.Board[Selected.Position].Piece = target.Piece;
+                    Gameboard.Board[Selected.Position].Piece.Position = Selected.Position;
+                    Selected = null;
                     Gameboard.IsPromotable = false;
                     return;
                 }
-                if (Gameboard.Selected == null && target.ContainsPiece && target.Piece.Color == Gameboard.CurrentPlayerColor)
-                    Gameboard.Selected = target;
-                else if (Gameboard.Selected == target)
-                    Gameboard.Selected = null;
-                else if (Gameboard.Selected != null)
-                    Gameboard.TryMove(Gameboard.Selected, target);
+                if (Selected == null && target.ContainsPiece && target.Piece.Color == Gameboard.CurrentPlayerColor)
+                    Selected = target;
+                else if (Selected == target)
+                    Selected = null;
+                else if (Selected != null)
+                    if (Gameboard.TryMove(Selected, target))
+                        Selected = null;
             }
         }
 
