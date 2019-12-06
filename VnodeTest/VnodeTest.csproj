@@ -72,7 +72,6 @@
     <Compile Include="GameEntities\PieceValue.cs" />
     <Compile Include="GameEntities\Queen.cs" />
     <Compile Include="GameEntities\Rook.cs" />
-    <Compile Include="GameEntities\Tile.cs" />
     <Compile Include="GameRepository.cs" />
     <Compile Include="PaginationComponent.cs" />
     <Compile Include="GamemodeController.cs" />

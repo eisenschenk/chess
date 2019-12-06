@@ -17,17 +17,17 @@ namespace VnodeTest.GameEntities
         protected override IEnumerable<int> GetPotentialMovements(Gameboard gameboard)
         {
             int possibleMove = (StartPosition == Position) ? 2 : 1;
-            Func<int, bool> enemyPiece = position => gameboard.Board[position].ContainsPiece == true && gameboard.Board[position].Piece.Color != Color;
+            Func<int, bool> enemyPiece = position => gameboard.Board[position] != null && gameboard.Board[position].Color != Color;
             if (Color == PieceColor.White)
             {
                 //Position - 7 hack to prevent movement to the left/right
-                var returnValues = GetStraightLines(gameboard, possibleMove).Where(x => x < Position - 7 && gameboard.Board[x].ContainsPiece == false);
+                var returnValues = GetStraightLines(gameboard, possibleMove).Where(x => x < Position - 7 && gameboard.Board[x] == null);
                 return returnValues.Concat(GetDiagonals(gameboard, 1).Where(x => x < Position && enemyPiece(x) || x == gameboard.EnPassantTarget));
             }
             else
             {
                 //Position + 7 hack to prevent movement to the left/right
-                var returnValues = GetStraightLines(gameboard, possibleMove).Where(x => x > Position + 7 && gameboard.Board[x].ContainsPiece == false);
+                var returnValues = GetStraightLines(gameboard, possibleMove).Where(x => x > Position + 7 && gameboard.Board[x] == null);
                 return returnValues.Concat(GetDiagonals(gameboard, 1).Where(x => x > Position && enemyPiece(x) || x == gameboard.EnPassantTarget));
             }
         }

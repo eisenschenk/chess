@@ -76,8 +76,8 @@ namespace VnodeTest.GameEntities
                 && currentTarget.Y < 8
                 && currentTarget.Y >= 0)
             {
-                var notNull = gameboard.Board[ConvertToOneD(currentTarget)].Piece != null;
-                var currentTargetColor = gameboard.Board[ConvertToOneD(currentTarget)].Piece?.Color;
+                var notNull = gameboard.Board[ConvertToOneD(currentTarget)] != null;
+                var currentTargetColor = gameboard.Board[ConvertToOneD(currentTarget)]?.Color;
                 if (notNull && currentTargetColor == Color)
                     yield break;
 
@@ -123,20 +123,20 @@ namespace VnodeTest.GameEntities
             {
                 var futureGameBoard = HypotheticalMove(gameboard, m);
                 var kingSameColorPosition = futureGameBoard.Board
-                    .Where(t => t.ContainsPiece && t.Piece.Color == Color && t.Piece is King)
-                    .Single().Piece.Position;
-                var enemyPieces = futureGameBoard.Board.Where(x => x.ContainsPiece && x.Piece.Color != Color);
+                    .Where(t => t != null && t.Color == Color && t is King)
+                    .Single().Position;
+                var enemyPieces = futureGameBoard.Board.Where(x => x != null && x.Color != Color);
 
-                return !enemyPieces.SelectMany(t => t.Piece.GetPotentialMovements(futureGameBoard)).Contains(kingSameColorPosition);
+                return !enemyPieces.SelectMany(t => t.GetPotentialMovements(futureGameBoard)).Contains(kingSameColorPosition);
             });
         }
 
         public Gameboard HypotheticalMove(Gameboard gameboard, int target)
         {
             var futureGameBoard = gameboard.Copy();
-            futureGameBoard.Board[target].Piece = Copy();
-            futureGameBoard.Board[target].Piece.Position = futureGameBoard.Board[target].Position;
-            futureGameBoard.Board[Position].Piece = null;
+            futureGameBoard.Board[target] = Copy();
+            futureGameBoard.Board[Position] = null;
+            futureGameBoard.Board[target].Position = futureGameBoard.Board[target].Position;
             return futureGameBoard;
         }
 

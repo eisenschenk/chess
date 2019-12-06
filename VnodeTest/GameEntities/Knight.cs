@@ -24,8 +24,8 @@ namespace VnodeTest.GameEntities
                 returnValues.Add((PositionXY.X + 2, PositionXY.Y + index));
             }
             return returnValues.Where(p => p.X >= 0 && p.X < 8 && p.Y >= 0 && p.Y < 8
-            && (gameboard.Board[ConvertToOneD(p)].ContainsPiece == false
-            || gameboard.Board[ConvertToOneD(p)].ContainsPiece == true && gameboard.Board[ConvertToOneD(p)].Piece.Color != Color))
+            && (gameboard.Board[ConvertToOneD(p)] != null == false
+            || gameboard.Board[ConvertToOneD(p)] != null == true && gameboard.Board[ConvertToOneD(p)].Color != Color))
                 .Select(t => ConvertToOneD(t));
         }
 

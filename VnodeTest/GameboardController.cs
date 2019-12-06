@@ -19,7 +19,7 @@ namespace VnodeTest
         private PieceColor PlayerColor;
         private IEngine Engine;
         private string Enginemove;
-        public Tile Selected { get; set; }
+        public BasePiece Selected { get; set; }
 
 
         public GameboardController()
@@ -114,16 +114,14 @@ namespace VnodeTest
         {
             if (Gameboard == default)
                 return RenderGameModeSelection();
-            //if (Gameboard.GameOver)
-            //    return RenderGameOver();
             if (Gameboard.IsPromotable)
                 return RenderPromotionSelection();
 
+            int rowSize = 8;
             if (PlayerColor == PieceColor.White)
                 return Div(
                      Fragment(Enumerable.Range(0, 8)
-                         .Select(rowx => Row(Gameboard.Board.Where(x => x.Position / 8 == rowx)
-                         .Select(t => RenderTile(t))))),
+                         .Select(row => Row(Gameboard.Board.Skip(rowSize * row).Take(rowSize).Select((p, col) => RenderTile(p, row, col))))),
                     Game.PlayedByEngine.B == true || Game.PlayedByEngine.W == true ? Text($"EngineMove: {Enginemove}") : null,
                     Text($"Time remaining White: {Gameboard.WhiteClock:hh\\:mm\\:ss}"),
                     Text($"Time remaining Black: {Gameboard.BlackClock:hh\\:mm\\:ss}"),
@@ -134,9 +132,7 @@ namespace VnodeTest
             {
                 return Div(
                     Fragment(Enumerable.Range(0, 8).Reverse()
-                        .Select(rowx => Row(Gameboard.Board.Where(x => x.Position / 8 == rowx)
-                        .OrderByDescending(t => t.PositionXY.X)
-                        .Select(t => RenderTile(t))))),
+                        .Select(row => Row(Gameboard.Board.Skip(rowSize * row).Take(rowSize).Select((p, col) => RenderTile(p, row, col)).Reverse()))),
                     Game.PlayedByEngine.B == true || Game.PlayedByEngine.W == true ? Text($"EngineMove: {Enginemove}") : null,
                     Text($"Time remaining White: {Gameboard.WhiteClock:hh\\:mm\\:ss}"),
                     Text($"Time remaining Black: {Gameboard.BlackClock:hh\\:mm\\:ss}"),
@@ -147,17 +143,59 @@ namespace VnodeTest
         }
 
         //remember onclick
-        private VNode RenderTile(Tile tile)
+        private VNode RenderTile(BasePiece piece, int row, int col)
         {
+            var target = Gameboard.ConvertTo1D((col, row));
             Style lastMove = null;
             if (Gameboard.Lastmove.start != null
-                && (tile.Position == Gameboard.Lastmove.start.Position || tile.Position == Gameboard.Lastmove.target.Position))
+                && (target == Gameboard.Lastmove.start.Position || target == Gameboard.Lastmove.target))
                 lastMove = Styles.BCred;
             return Div(
-                 tile.Style & (tile == Selected ? Styles.Selected : tile.BorderStyle) & lastMove,
-                () => Select(tile),
-                tile.ContainsPiece ? Text(tile.Piece.Sprite, Styles.FontSize3) : null
+                 GetBaseStyle(target) & (Gameboard.Board[target] != null && Gameboard.Board[target] == Selected ? Styles.Selected : GetBorderStyle(target)) & lastMove,
+                () => Select(target),
+                piece != null
+                ? Text(piece.Sprite, Styles.FontSize3)
+                : null
             );
+        }
+
+        private Style GetBaseStyle(int position)
+        {
+            return TileColor(position) switch
+            {
+                PieceColor.Black => Styles.TileBlack,
+                PieceColor.White => Styles.TileWhite,
+                _ => Styles.TCwhite
+            };
+        }
+
+        private Style GetBorderStyle(int position)
+        {
+            return TileColor(position) switch
+            {
+                PieceColor.Black => Styles.BorderBlack,
+                PieceColor.White => Styles.BorderWhite,
+                _ => Styles.TCwhite
+            };
+        }
+
+        private PieceColor TileColor(int position)
+        {
+            //Boolsche algebra ^ = XOR
+            var rowEven = (position / 8) % 2 == 0;
+            if (rowEven)
+                return (position % 2) switch
+                {
+                    0 => PieceColor.Black,
+                    1 => PieceColor.White,
+                    _ => PieceColor.Zero
+                };
+            return (position % 2) switch
+            {
+                0 => PieceColor.White,
+                1 => PieceColor.Black,
+                _ => PieceColor.Zero
+            };
         }
 
         private VNode RenderGameOver()
@@ -175,37 +213,37 @@ namespace VnodeTest
 
         private VNode RenderPromotionSelection()
         {
-            Tile[] promotionSelect = new GameEntities.Tile[4];
-            promotionSelect[0] = (new Tile(new Rook(0, Selected.Piece.Color), 0));
-            promotionSelect[1] = (new Tile(new Knight(1, Selected.Piece.Color), 1));
-            promotionSelect[2] = (new Tile(new Bishop(2, Selected.Piece.Color), 2));
-            promotionSelect[3] = (new Tile(new Queen(3, Selected.Piece.Color), 3));
+            BasePiece[] promotionSelect = new BasePiece[4];
+            promotionSelect[0] = new Rook(0, Selected.Color);
+            promotionSelect[1] = new Knight(1, Selected.Color);
+            promotionSelect[2] = new Bishop(2, Selected.Color);
+            promotionSelect[3] = new Queen(3, Selected.Color);
             return Div(
                 Styles.M2,
                 Text($"Select Piece you want the Pawn to be promoted to.", Styles.FontSize1p5),
-                Row(Fragment(promotionSelect.Select(x => RenderTile(x))))
+                Row(Fragment(promotionSelect.Select(x => RenderTile(x, x.PositionXY.X, x.PositionXY.Y))))
             );
         }
 
-        private void Select(Tile target)
+        private void Select(int target)
         {
             if (Gameboard.CurrentPlayerColor == PieceColor.White && Game.PlayedByEngine.W == false && PlayerColor == PieceColor.White
                 || Gameboard.CurrentPlayerColor == PieceColor.Black && Game.PlayedByEngine.B == false && PlayerColor == PieceColor.Black)
             {
 
                 // eigener Select für Promotion bzw. RenderTile mit Onclick param?
-                if (Gameboard.IsPromotable == true)
-                {
-                    Selected = Gameboard.Lastmove.target;
-                    Gameboard.Board[Selected.Position].Piece = target.Piece;
-                    Gameboard.Board[Selected.Position].Piece.Position = Selected.Position;
-                    Selected = null;
-                    Gameboard.IsPromotable = false;
-                    return;
-                }
-                if (Selected == null && target.ContainsPiece && target.Piece.Color == Gameboard.CurrentPlayerColor)
-                    Selected = target;
-                else if (Selected == target)
+                //if (Gameboard.IsPromotable == true)
+                //{
+                //    Selected = Gameboard.Board[Gameboard.Lastmove.target];
+                //    Gameboard.Board[Selected.Position] = target;
+                //    Gameboard.Board[Selected.Position].Position = Selected.Position;
+                //    Selected = null;
+                //    Gameboard.IsPromotable = false;
+                //    return;
+                //}
+                if (Selected == null && Gameboard.Board[target] != null && Gameboard.Board[target].Color == Gameboard.CurrentPlayerColor)
+                    Selected = Gameboard.Board[target];
+                else if (Selected == Gameboard.Board[target])
                     Selected = null;
                 else if (Selected != null)
                     if (Gameboard.TryMove(Selected, target))

@@ -27,21 +27,21 @@ namespace VnodeTest.GameEntities
 
         private IEnumerable<int> GetCastlingPositions(Gameboard gameboard)
         {
-            bool EmptyAndNoCheck(int direction, Tile rookTile)
+            bool EmptyAndNoCheck(int direction, BasePiece rookTile)
             {
-                if (!rookTile.ContainsPiece || !(rookTile.Piece is Rook) || rookTile.Piece.HasMoved)
+                if (!(rookTile is Rook) || rookTile.HasMoved)
                     return false;
 
                 if (direction < 0)
                 {
                     for (int index = Position + direction; index >= rookTile.Position; index--)
-                        if (gameboard.Board[index].ContainsPiece)
+                        if (gameboard.Board[index] != null)
                             return false;
                 }
                 else
                 {
                     for (int index = Position + direction; index <= rookTile.Position; index++)
-                        if (gameboard.Board[index].ContainsPiece)
+                        if (gameboard.Board[index] != null)
                             return false;
                 }
                 if (gameboard.CheckDetection(Color)
@@ -51,12 +51,13 @@ namespace VnodeTest.GameEntities
             }
             if (!HasMoved && (Position == 4 || Position == 60))
             {
+
                 var rookTileLeft = gameboard.Board[Position - 4];
                 var rookTileRight = gameboard.Board[Position + 3];
 
-                if (EmptyAndNoCheck(-1, rookTileLeft))
+                if (rookTileLeft != default && EmptyAndNoCheck(-1, rookTileLeft))
                     yield return Position - 2;
-                if (EmptyAndNoCheck(1, rookTileRight))
+                if (rookTileRight != null && EmptyAndNoCheck(1, rookTileRight))
                     yield return Position + 2;
             }
         }
