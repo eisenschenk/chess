@@ -19,11 +19,11 @@ namespace VnodeTest.GameEntities
         public PieceColor CurrentPlayerColor { get; set; } = PieceColor.White;
         public int EnPassantTarget { get; set; } = -1;
         public (BasePiece start, Tile target) Lastmove { get; set; }
-        private int MoveCounter { get; set; } = 1;
-        private int HalfMoveCounter { get; set; }
-        public IEngine Engine { get; }
-        public (bool W, bool B) PlayedByEngine { get; }
-        public string EngineMove { get; private set; } // debug string
+        public int MoveCounter { get; private set; } = 1;
+        public int HalfMoveCounter { get; private set; }
+        //public IEngine Engine { get; }
+        // public (bool W, bool B) PlayedByEngine { get; }
+        // public string EngineMove { get; private set; } // debug string
 
         private TimeSpan _WhiteClock;
         public TimeSpan WhiteClock { get => _WhiteClock; private set => _WhiteClock = value; }
@@ -41,15 +41,10 @@ namespace VnodeTest.GameEntities
         {
             for (int index = 0; index < 64; index++)
                 Board[index] = new Tile(index);
-            PlayedByEngine = playedByEngine;
-            if (PlayedByEngine != default)
-                Engine = engine ?? new EngineControl();
             PutPiecesInStartingPosition();
             LastClockUpdate = DateTime.Now;
             WhiteClock = playerClockTime;
             BlackClock = playerClockTime;
-            if (CurrentPlayerColor == PieceColor.White && PlayedByEngine.W)
-                TryEngineMove();
         }
 
         private Gameboard(IEnumerable<Tile> collection)
@@ -57,23 +52,20 @@ namespace VnodeTest.GameEntities
             Board = collection.ToArray();
         }
 
-        public void TryEngineMove()
+        public void TryEngineMove(string engineMove, (bool, bool) engineControlled = default)
         {
-            ThreadPool.QueueUserWorkItem(o =>
-            {
-                EngineMove = Engine.GetEngineMove(GetFeNotation());
-                var _engineMove = GetCoordinates(EngineMove);
-                TryMove(Board[_engineMove.start], Board[_engineMove.target]);
-                if (EngineMove.Length >= 5)
-                    Board[_engineMove.target].Piece = EngineMove[4] switch
-                    {
-                        'q' => new Queen(_engineMove.target, CurrentPlayerColor),
-                        'n' => new Knight(_engineMove.target, CurrentPlayerColor),
-                        'b' => new Bishop(_engineMove.target, CurrentPlayerColor),
-                        'r' => new Rook(_engineMove.target, CurrentPlayerColor),
-                        _ => default
-                    };
-            });
+            //EngineMove = Engine.GetEngineMove(GetFeNotation());
+            var _engineMove = GetCoordinates(engineMove);
+            TryMove(Board[_engineMove.start], Board[_engineMove.target], engineControlled);
+            if (engineMove.Length >= 5)
+                Board[_engineMove.target].Piece = engineMove[4] switch
+                {
+                    'q' => new Queen(_engineMove.target, CurrentPlayerColor),
+                    'n' => new Knight(_engineMove.target, CurrentPlayerColor),
+                    'b' => new Bishop(_engineMove.target, CurrentPlayerColor),
+                    'r' => new Rook(_engineMove.target, CurrentPlayerColor),
+                    _ => default
+                };
         }
 
         private static (int start, int target) GetCoordinates(string input)
@@ -206,7 +198,7 @@ namespace VnodeTest.GameEntities
             return false;
         }
 
-        public bool TryMove(Tile start, Tile target)
+        public bool TryMove(Tile start, Tile target, (bool, bool) engineControlled = default)
         {
             if (TryCastling(start, target))
                 return true;
@@ -218,7 +210,7 @@ namespace VnodeTest.GameEntities
                 HalfMoveCounter = 0;
             else
                 HalfMoveCounter++;
-            MovePiece(start, target);
+            MovePiece(start, target, engineControlled);
             return true;
         }
 
@@ -247,9 +239,9 @@ namespace VnodeTest.GameEntities
             }
         }
 
-        private void ActionsAfterMoveSuccess(Tile target)
+        private void ActionsAfterMoveSuccess(Tile target, (bool, bool) engineControlled = default)
         {
-            TryEnablePromotion(target);
+            TryEnablePromotion(target, engineControlled);
             UpdateClocks(changeCurrentPlayer: true);
             if (CurrentPlayerColor == PieceColor.White)
                 MoveCounter++;
@@ -283,7 +275,7 @@ namespace VnodeTest.GameEntities
             target.Piece.Position = target.Position;
             start.Piece = null;
         }
-        private void MovePiece(Tile start, Tile target)
+        private void MovePiece(Tile start, Tile target, (bool, bool) engineControlled = default)
         {
             if (start.Piece is Pawn)
             {
@@ -296,20 +288,14 @@ namespace VnodeTest.GameEntities
             }
             Lastmove = (start.Piece.Copy(), target.Copy());
             MovePieceInternal(start, target);
-            ActionsAfterMoveSuccess(target);
-
-            if (PlayedByEngine.B && CurrentPlayerColor == PieceColor.Black)
-                TryEngineMove();
-            else if (PlayedByEngine.W && CurrentPlayerColor == PieceColor.White)
-                TryEngineMove();
-
+            ActionsAfterMoveSuccess(target, engineControlled);
         }
 
-        public void TryEnablePromotion(Tile tile)
+        public void TryEnablePromotion(Tile tile, (bool W, bool B) engineControlled = default)
         {
             if (tile.Piece is Pawn && (tile.Piece.Position > 55 || tile.Piece.Position < 7))
             {
-                if ((CurrentPlayerColor == PieceColor.White && !PlayedByEngine.W) || (CurrentPlayerColor == PieceColor.Black && !PlayedByEngine.B))
+                if ((CurrentPlayerColor == PieceColor.White && !engineControlled.W) || (CurrentPlayerColor == PieceColor.Black && !engineControlled.B))
                     IsPromotable = true;
             }
         }

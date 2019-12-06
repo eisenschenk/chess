@@ -17,6 +17,8 @@ namespace VnodeTest
         private int Gameroom;
         private VNode RefreshReference;
         private PieceColor PlayerColor;
+        private IEngine Engine;
+        private string Enginemove;
         public Tile Selected { get; set; }
 
 
@@ -53,29 +55,28 @@ namespace VnodeTest
         }
 
 
-        private Game GetFittingGame(Gamemode gamemode, string _key, (bool, bool) engineControlled = default)
+        private Game GetFittingGame(Gamemode gamemode, string _key)
         {
             Game game;
             int key = int.Parse(_key);
             while (GameRepository.Instance.TryGetGame(key, out game))
             {
-                if ((gamemode == Gamemode.PvP && !game.HasOpenSpots)
-                    || ((gamemode == Gamemode.EvE || gamemode == Gamemode.PvE) && game.HasOpenSpots))
+                if (!game.HasOpenSpots)
                     key++;
                 else
                     break;
             }
             if (game == default)
-                game = GameRepository.Instance.AddGame(key, gamemode, new Gameboard(TimeSpan.FromSeconds(30000000), engineControlled));
+                game = GameRepository.Instance.AddGame(key, gamemode, new Gameboard(TimeSpan.FromSeconds(30000000)));
 
             return game;
         }
         private void SelectGameMode(Gamemode gamemode, string index = "0")
         {
+            Game = GetFittingGame(gamemode, index);
             //PvP
             if (gamemode == Gamemode.PvP)
             {
-                Game = GetFittingGame(gamemode, index);
                 if (!Game.HasWhitePlayer)
                 {
                     PlayerColor = PieceColor.White;
@@ -90,13 +91,16 @@ namespace VnodeTest
             //EvE && PvE
             else if (gamemode == Gamemode.EvE || gamemode == Gamemode.PvE)
             {
-                if (gamemode == Gamemode.EvE)
-                    Game = GetFittingGame(gamemode, index, (true, true));
-                else
-                    Game = GetFittingGame(gamemode, index, (false, true));
+                Engine = new EngineControl();
                 Game.HasWhitePlayer = true;
                 Game.HasBlackPlayer = true;
                 PlayerColor = PieceColor.White;
+                if (gamemode == Gamemode.EvE)
+                    ThreadPool.QueueUserWorkItem(o =>
+                    {
+                        while (!Gameboard.GameOver)
+                            Gameboard.TryEngineMove(Engine.GetEngineMove(Gameboard.GetFeNotation()), Game.PlayedByEngine);
+                    });
             }
         }
 
@@ -120,7 +124,7 @@ namespace VnodeTest
                      Fragment(Enumerable.Range(0, 8)
                          .Select(rowx => Row(Gameboard.Board.Where(x => x.Position / 8 == rowx)
                          .Select(t => RenderTile(t))))),
-                    Gameboard.PlayedByEngine.B == true || Gameboard.PlayedByEngine.W == true ? Text($"EngineMove: {Gameboard.EngineMove}") : null,
+                    Game.PlayedByEngine.B == true || Game.PlayedByEngine.W == true ? Text($"EngineMove: {Enginemove}") : null,
                     Text($"Time remaining White: {Gameboard.WhiteClock:hh\\:mm\\:ss}"),
                     Text($"Time remaining Black: {Gameboard.BlackClock:hh\\:mm\\:ss}"),
                     Text($"Gameroom: {Game.ID}")
@@ -132,7 +136,7 @@ namespace VnodeTest
                         .Select(rowx => Row(Gameboard.Board.Where(x => x.Position / 8 == rowx)
                         .OrderByDescending(t => t.PositionXY.X)
                         .Select(t => RenderTile(t))))),
-                    Gameboard.PlayedByEngine.B == true || Gameboard.PlayedByEngine.W == true ? Text($"EngineMove: {Gameboard.EngineMove}") : null,
+                    Game.PlayedByEngine.B == true || Game.PlayedByEngine.W == true ? Text($"EngineMove: {Enginemove}") : null,
                     Text($"Time remaining White: {Gameboard.WhiteClock:hh\\:mm\\:ss}"),
                     Text($"Time remaining Black: {Gameboard.BlackClock:hh\\:mm\\:ss}"),
                      Text($"Gameroom: {Game.ID}")
@@ -183,8 +187,8 @@ namespace VnodeTest
 
         private void Select(Tile target)
         {
-            if (Gameboard.CurrentPlayerColor == PieceColor.White && Gameboard.PlayedByEngine.W == false && PlayerColor == PieceColor.White
-                || Gameboard.CurrentPlayerColor == PieceColor.Black && Gameboard.PlayedByEngine.B == false && PlayerColor == PieceColor.Black)
+            if (Gameboard.CurrentPlayerColor == PieceColor.White && Game.PlayedByEngine.W == false && PlayerColor == PieceColor.White
+                || Gameboard.CurrentPlayerColor == PieceColor.Black && Game.PlayedByEngine.B == false && PlayerColor == PieceColor.Black)
             {
 
                 // eigener Select für Promotion bzw. RenderTile mit Onclick param?
@@ -203,7 +207,22 @@ namespace VnodeTest
                     Selected = null;
                 else if (Selected != null)
                     if (Gameboard.TryMove(Selected, target))
+                    {
                         Selected = null;
+                        ThreadPool.QueueUserWorkItem(o =>
+                        {
+                            if (Game.PlayedByEngine.B && Gameboard.CurrentPlayerColor == PieceColor.Black)
+                            {
+                                Enginemove = Engine.GetEngineMove(Gameboard.GetFeNotation());
+                                Gameboard.TryEngineMove(Enginemove);
+                            }
+                            else if (Game.PlayedByEngine.W && Gameboard.CurrentPlayerColor == PieceColor.White)
+                            {
+                                Engine.GetEngineMove(Gameboard.GetFeNotation());
+                                Gameboard.TryEngineMove(Enginemove);
+                            }
+                        });
+                    }
             }
         }
 

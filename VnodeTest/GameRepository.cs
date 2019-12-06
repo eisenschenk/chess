@@ -40,7 +40,7 @@ namespace VnodeTest
 
         public bool TryGetGame(int key, out Game game) => Store.TryGetValue(key, out game);
     }
-
+    //TODO: playedbyengine hier rein
     class Game
     {
         public int ID { get; }
@@ -49,12 +49,20 @@ namespace VnodeTest
         public bool HasWhitePlayer { get; set; }
         public bool HasOpenSpots => !HasBlackPlayer || !HasWhitePlayer;
         public Gameboard Gameboard { get; }
+        public (bool W, bool B) PlayedByEngine { get; set; }
 
         public Game(int id, Gamemode gamemode, Gameboard gameboard)
         {
             ID = id;
             Gamemode = gamemode;
             Gameboard = gameboard;
+            PlayedByEngine = gamemode switch
+            {
+                Gamemode.PvP => (false, false),
+                Gamemode.PvE => (false, true),
+                Gamemode.EvE => (true, true),
+                _ => throw new Exception("error game switch")
+            };
         }
     }
 }
