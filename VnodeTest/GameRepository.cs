@@ -25,11 +25,36 @@ namespace VnodeTest
 
         private GameRepository() { }
 
-        private readonly Dictionary<int, Gameboard> Store = new Dictionary<int, Gameboard>();
+        private readonly Dictionary<int, Game> Store = new Dictionary<int, Game>();
 
 
-        public void AddBoard(int key, Gameboard board) => Store[key] = board;
 
-        public bool TryGetBoard(int key, out Gameboard board) => Store.TryGetValue(key, out board);
+        public IEnumerable<int> Keys => Store.Keys;
+
+        public Game AddGame(int key, Gamemode mode, Gameboard board)
+        {
+            var game = new Game(key, mode, board);
+            Store[key] = game;
+            return game;
+        }
+
+        public bool TryGetGame(int key, out Game game) => Store.TryGetValue(key, out game);
+    }
+
+    class Game
+    {
+        public int ID { get; }
+        public Gamemode Gamemode { get; }
+        public bool HasBlackPlayer { get; set; }
+        public bool HasWhitePlayer { get; set; }
+        public bool HasOpenSpots => !HasBlackPlayer || !HasWhitePlayer;
+        public Gameboard Gameboard { get; }
+
+        public Game(int id, Gamemode gamemode, Gameboard gameboard)
+        {
+            ID = id;
+            Gamemode = gamemode;
+            Gameboard = gameboard;
+        }
     }
 }

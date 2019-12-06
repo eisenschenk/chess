@@ -13,23 +13,18 @@ namespace VnodeTest.GameEntities
     public class Gameboard
     {
         public Tile[] Board { get; set; } = new Tile[64];
-        public bool Promotion { get; set; }
+        public bool IsPromotable { get; set; }
         public bool GameOver => Winner.HasValue;
         public PieceColor? Winner { get; set; }
         public PieceColor CurrentPlayerColor { get; set; } = PieceColor.White;
-        public Tile Selected { get; set; }
-        public int EnPassantTarget { get; set; }
+        public Tile Selected { get; set; } // trash
+        public int EnPassantTarget { get; set; } = -1;
         public (BasePiece start, Tile target) Lastmove { get; set; }
-        public bool EnPassantPossible { get; set; }
         private int MoveCounter { get; set; } = 1;
         private int HalfMoveCounter { get; set; }
-        public EngineControl Engine { get; } = new EngineControl();
-        public (bool W, bool B) PlayedByEngine { get; set; }
-        public string EngineMove { get; set; }
-        public Gamemode GameMode { get; set; }
-        public bool HasPlayerWhite { get; set; }
-        public bool HasPlayerBlack { get; set; }
-        //public int GameBoardID { get; set; } = 0;
+        public IEngine Engine { get; }
+        public (bool W, bool B) PlayedByEngine { get; }
+        public string EngineMove { get; private set; } // debug string
 
         private TimeSpan _WhiteClock;
         public TimeSpan WhiteClock { get => _WhiteClock; private set => _WhiteClock = value; }
@@ -43,10 +38,13 @@ namespace VnodeTest.GameEntities
             get => Board[y * 8 + x];
             set => Board[y * 8 + x] = value;
         }
-        public Gameboard(TimeSpan playerClockTime)
+        public Gameboard(TimeSpan playerClockTime, (bool, bool) playedByEngine = default, IEngine engine = default)
         {
             for (int index = 0; index < 64; index++)
                 Board[index] = new Tile(index);
+            PlayedByEngine = playedByEngine;
+            if (PlayedByEngine != default)
+                Engine = engine ?? new EngineControl();
             PutPiecesInStartingPosition();
             LastClockUpdate = DateTime.Now;
             WhiteClock = playerClockTime;
@@ -55,7 +53,7 @@ namespace VnodeTest.GameEntities
                 TryEngineMove();
         }
 
-        public Gameboard(IEnumerable<Tile> collection)
+        private Gameboard(IEnumerable<Tile> collection)
         {
             Board = collection.ToArray();
         }
@@ -64,7 +62,7 @@ namespace VnodeTest.GameEntities
         {
             ThreadPool.QueueUserWorkItem(o =>
             {
-                EngineMove = Engine.ParseEngineMove(this);
+                EngineMove = Engine.GetEngineMove(GetFeNotation());
                 var _engineMove = GetCoordinates(EngineMove);
                 TryMove(Board[_engineMove.start], Board[_engineMove.target]);
                 if (EngineMove.Length >= 5)
@@ -125,7 +123,7 @@ namespace VnodeTest.GameEntities
             }
             output += CurrentPlayerColor == PieceColor.White ? " w " : " b ";
             output += GetPossibleCastles();
-            output += EnPassantPossible ? $" {ParseIntToString(EnPassantTarget)} " : " - ";
+            output += EnPassantTarget == -1 ? $" {ParseIntToString(EnPassantTarget)} " : " - ";
             output += $"{HalfMoveCounter} ";
             output += $"{MoveCounter}";
             return output;
@@ -209,28 +207,6 @@ namespace VnodeTest.GameEntities
             return false;
         }
 
-        public void CheckForPossibleEnPassant(Tile start, Tile target)
-        {
-            if (start.Piece is Pawn && Math.Abs(start.PositionXY.Y - target.PositionXY.Y) == 2
-                && HasAdjacentEnemyPawn(target))
-                EnPassantPossible = true;
-        }
-
-        private bool HasAdjacentEnemyPawn(Tile target)
-        {
-            static bool IsInBounds(int X)
-            {
-                if (X < 8 && X >= 0)
-                    return true;
-                return false;
-            }
-            for (int directionX = -1; directionX < 2; directionX += 2)
-                if (IsInBounds(target.PositionXY.X + directionX) && Board[target.PositionXY.X + directionX].ContainsPiece
-                    && this[target.PositionXY.X + directionX, target.PositionXY.Y].Piece is Pawn)
-                    return true;
-            return false;
-        }
-
         public bool TryMove(Tile start, Tile target)
         {
             if (TryCastling(start, target))
@@ -243,7 +219,6 @@ namespace VnodeTest.GameEntities
                 HalfMoveCounter = 0;
             else
                 HalfMoveCounter++;
-            CheckForPossibleEnPassant(start, target);
             MovePiece(start, target);
             return true;
         }
@@ -286,6 +261,8 @@ namespace VnodeTest.GameEntities
 
         public bool CheckForGameOver()
         {
+            if (HalfMoveCounter >= 100)
+                return true;
             foreach (Tile tile in Board.Where(t => t.ContainsPiece && t.Piece.Color == CurrentPlayerColor))
                 if (tile.Piece.GetValidMovements(this).Any())
                     return false;
@@ -312,7 +289,9 @@ namespace VnodeTest.GameEntities
         {
             if (start.Piece is Pawn)
             {
-                if (EnPassantPossible && target.Position == EnPassantTarget)
+                var enPassant = EnPassantTarget;
+                EnPassantTarget = -1;
+                if (target.Position == enPassant)
                     Board[Lastmove.target.Position].Piece = null;
                 else if (Math.Abs(start.PositionXY.Y - target.PositionXY.Y) == 2)
                     EnPassantTarget = start.PositionXY.X + (start.Piece.Color == PieceColor.Black ? (start.PositionXY.Y + 1) * 8 : (start.PositionXY.Y - 1) * 8);
@@ -332,10 +311,10 @@ namespace VnodeTest.GameEntities
         {
             if (tile.Piece is Pawn && (tile.Piece.Position > 55 || tile.Piece.Position < 7))
             {
-                if ((CurrentPlayerColor == PieceColor.White && PlayedByEngine.W) || (CurrentPlayerColor == PieceColor.Black && PlayedByEngine.B))
+                if ((CurrentPlayerColor == PieceColor.White && !PlayedByEngine.W) || (CurrentPlayerColor == PieceColor.Black && !PlayedByEngine.B))
                 {
                     Selected = tile;
-                    Promotion = true;
+                    IsPromotable = true;
                 }
             }
         }

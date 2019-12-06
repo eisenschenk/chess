@@ -9,9 +9,12 @@ using static ACL.UI.React.DOM;
 
 namespace VnodeTest.GameEntities
 {
-    //TODO: Select players/engine in gameboard
-    //TODO: implement gameclock
-    public class EngineControl
+    public interface IEngine
+    {
+        string GetEngineMove(string feNotation);
+    }
+
+    public class EngineControl : IEngine
     {
         public Process Engine { get; }
         public BasePiece Promotion { get; set; }
@@ -26,10 +29,10 @@ namespace VnodeTest.GameEntities
             };
             Engine = Process.Start(startinfo);
         }
-        public string ParseEngineMove(Gameboard gameboard)
+        public string GetEngineMove(string feNotation)
         {
             var output = string.Empty;
-            Engine.StandardInput.WriteLine($"position fen \"{gameboard.GetFeNotation()}\"");
+            Engine.StandardInput.WriteLine($"position fen \"{feNotation}\"");
             Engine.StandardInput.WriteLine("setoption name MultiPV value 3");
             Engine.StandardInput.WriteLine("go movetime 3000");
             while (!output.StartsWith("bestmove"))

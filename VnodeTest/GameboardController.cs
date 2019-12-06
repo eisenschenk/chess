@@ -12,11 +12,13 @@ namespace VnodeTest
 {
     public class GameboardController
     {
-        private Gameboard Gameboard;
+        private Game Game;
+        private Gameboard Gameboard => Game != null ? Game.Gameboard : null;
+        private int Gameroom;
         private VNode RefreshReference;
         private PieceColor PlayerColor;
-        private string Gameroom;
-       
+        public Tile Selected { get; set; }
+
 
         public GameboardController()
         {
@@ -35,81 +37,65 @@ namespace VnodeTest
         {
             var gameroomDisplay = Gameroom == default ? "Random Room" : $"Room {Gameroom}";
             return Div(
-               Text("Player vs. AI Start", Styles.Btn & Styles.MX2, () => GameModeSelection(Gamemode.PvE)),
-               Text("AI vs. AI Start", Styles.MX2 & Styles.Btn, () => GameModeSelection(Gamemode.EvE)),
-               Row(
-                   Text($"Player vs. Player Start/Enter {gameroomDisplay}", Styles.MX2 & Styles.Btn, () => GameModeSelection(Gamemode.PvP, Gameroom)),
-                   Input(Gameroom, i => Gameroom = i, Styles.MX2, "Gameroom Nr.")
+                Text("Player vs. AI Start", Styles.Btn & Styles.MX2, () => SelectGameMode(Gamemode.PvE)),
+                Text("AI vs. AI Start", Styles.MX2 & Styles.Btn, () => SelectGameMode(Gamemode.EvE)),
+                Row(
+                    Text($"Player vs. Player Start/Enter {gameroomDisplay}", Styles.MX2 & Styles.Btn, () => SelectGameMode(Gamemode.PvP, Gameroom.ToString())),
+                    Input(Gameroom, i => Gameroom = i, Styles.MX2, " Select Gameroom Nr.")
+                ),
+                GameRepository.Instance.Keys.Any()
+                ? Div(
+                    Text("Open Games: "),
+                    Fragment(GameRepository.Instance.Keys.Select(key => Text(key.ToString())))
                 )
+                : null
             );
         }
 
-        private Gameboard GetFittingBoard(int index, bool condition)
+
+        private Game GetFittingGame(Gamemode gamemode, string _key, (bool, bool) engineControlled = default)
         {
-            while (condition)
+            Game game;
+            int key = int.Parse(_key);
+            while (GameRepository.Instance.TryGetGame(key, out game))
             {
-                index++;
-                if (index != 0)
-                {
-                    GameRepository.Instance.AddBoard(index, new Gameboard(TimeSpan.FromSeconds(3000000)));
+                if ((gamemode == Gamemode.PvP && !game.HasOpenSpots)
+                    || ((gamemode == Gamemode.EvE || gamemode == Gamemode.PvE) && game.HasOpenSpots))
+                    key++;
+                else
                     break;
-                }
             }
-            GameRepository.Instance.TryGetBoard(index, out var board);
-            Gameroom = index.ToString();
+            if (game == default)
+                game = GameRepository.Instance.AddGame(key, gamemode, new Gameboard(TimeSpan.FromSeconds(30000000), engineControlled));
 
-            return board;
+            return game;
         }
-
-        private void GameModeSelection(Gamemode gamemode, string index = "0")
+        private void SelectGameMode(Gamemode gamemode, string index = "0")
         {
-            Int32.TryParse(index, out int _index);
-            //human vs human
+            //PvP
             if (gamemode == Gamemode.PvP)
             {
-                if (!GameRepository.Instance.TryGetBoard(_index, out var board))
-                    GameRepository.Instance.AddBoard(_index, board = new Gameboard(TimeSpan.FromSeconds(3000000)));
-                else
-                    board = GetFittingBoard(_index, GameRepository.Instance.TryGetBoard(_index, out var _board) && _board.HasPlayerBlack && _board.HasPlayerWhite);
-                Gameboard = board;
-                if (!Gameboard.HasPlayerWhite)
+                Game = GetFittingGame(gamemode, index);
+                if (!Game.HasWhitePlayer)
                 {
                     PlayerColor = PieceColor.White;
-                    Gameboard.HasPlayerWhite = true;
+                    Game.HasWhitePlayer = true;
                 }
                 else
                 {
                     PlayerColor = PieceColor.Black;
-                    Gameboard.HasPlayerBlack = true;
+                    Game.HasBlackPlayer = true;
                 }
             }
-
-            //ai vs ai
-            else if (gamemode == Gamemode.EvE)
+            //EvE && PvE
+            else if (gamemode == Gamemode.EvE || gamemode == Gamemode.PvE)
             {
-                if (!GameRepository.Instance.TryGetBoard(_index, out var board))
-                    GameRepository.Instance.AddBoard(_index, board = new Gameboard(TimeSpan.FromSeconds(3000000)));
+                if (gamemode == Gamemode.EvE)
+                    Game = GetFittingGame(gamemode, index, (true, true));
                 else
-                    board = GetFittingBoard(_index, GameRepository.Instance.TryGetBoard(_index, out var _board) && (_board.HasPlayerWhite || _board.HasPlayerBlack));
-                Gameboard = board;
-                Gameboard.HasPlayerWhite = true;
-                Gameboard.HasPlayerBlack = true;
-                Gameboard.PlayedByEngine = (true, true);
-                PlayerColor = PieceColor.White;
-                Gameboard.TryEngineMove();
-            }
-
-            //human vs ai
-            else if (gamemode == Gamemode.PvE)
-            {
-                if (!GameRepository.Instance.TryGetBoard(_index, out var board))
-                    GameRepository.Instance.AddBoard(_index, board = new Gameboard(TimeSpan.FromSeconds(3000000)));
-                else
-                    board = GetFittingBoard(_index, GameRepository.Instance.TryGetBoard(_index, out var _board) && (_board.HasPlayerWhite || _board.HasPlayerBlack));
-                Gameboard = board;
-                Gameboard.HasPlayerWhite = true;
-                Gameboard.HasPlayerBlack = true;
-                Gameboard.PlayedByEngine = (false, true);
+                    Game = GetFittingGame(gamemode, index, (false, true));
+                Game.HasWhitePlayer = true;
+                Game.HasBlackPlayer = true;
                 PlayerColor = PieceColor.White;
             }
         }
@@ -126,7 +112,7 @@ namespace VnodeTest
                 return RenderGameModeSelection();
             if (Gameboard.GameOver)
                 return RenderGameOver();
-            if (Gameboard.Promotion)
+            if (Gameboard.IsPromotable)
                 return RenderPromotionSelection();
 
             if (PlayerColor == PieceColor.White)
@@ -137,7 +123,7 @@ namespace VnodeTest
                     Gameboard.PlayedByEngine.B == true || Gameboard.PlayedByEngine.W == true ? Text($"EngineMove: {Gameboard.EngineMove}") : null,
                     Text($"Time remaining White: {Gameboard.WhiteClock:hh\\:mm\\:ss}"),
                     Text($"Time remaining Black: {Gameboard.BlackClock:hh\\:mm\\:ss}"),
-                    Text($"Gameroom: {Gameroom}")
+                    Text($"Gameroom: {Game.ID}")
                     );
             else
             {
@@ -149,7 +135,7 @@ namespace VnodeTest
                     Gameboard.PlayedByEngine.B == true || Gameboard.PlayedByEngine.W == true ? Text($"EngineMove: {Gameboard.EngineMove}") : null,
                     Text($"Time remaining White: {Gameboard.WhiteClock:hh\\:mm\\:ss}"),
                     Text($"Time remaining Black: {Gameboard.BlackClock:hh\\:mm\\:ss}"),
-                     Text($"Gameroom: {Gameroom}")
+                     Text($"Gameroom: {Game.ID}")
                    );
             }
         }
@@ -202,12 +188,12 @@ namespace VnodeTest
             {
 
                 // eigener Select für Promotion bzw. RenderTile mit Onclick param?
-                if (Gameboard.Promotion == true)
+                if (Gameboard.IsPromotable == true)
                 {
                     Gameboard.Board[Gameboard.Selected.Position].Piece = target.Piece;
                     Gameboard.Board[Gameboard.Selected.Position].Piece.Position = Gameboard.Selected.Position;
                     Gameboard.Selected = null;
-                    Gameboard.Promotion = false;
+                    Gameboard.IsPromotable = false;
                     return;
                 }
                 if (Gameboard.Selected == null && target.ContainsPiece && target.Piece.Color == Gameboard.CurrentPlayerColor)

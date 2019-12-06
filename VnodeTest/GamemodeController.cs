@@ -15,7 +15,7 @@ namespace VnodeTest
         //public GamemodeController() { }
         //public VNode Render()
         //{
-            
+
         //    return SelectionDone ? Gameboard.GbController.Render() : RenderGameModeSelection();
         //}
 
