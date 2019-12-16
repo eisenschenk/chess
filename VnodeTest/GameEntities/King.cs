@@ -13,13 +13,6 @@ namespace VnodeTest.GameEntities
             Value = PieceValue.King;
         }
 
-        //public King(int position, PieceColor color, bool hasMoved, int startPosition) : base(position, color)
-        //{
-        //    Value = PieceValue.King;
-        //    HasMoved = hasMoved;
-        //    StartPosition = startPosition;
-        //}
-
         protected override IEnumerable<int> GetPotentialMovements(Gameboard gameboard)
         {
             return GetDiagonals(gameboard, 1).Concat(GetStraightLines(gameboard, 1)).Concat(GetCastlingPositions(gameboard));

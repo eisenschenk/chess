@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 
 namespace VnodeTest.GameEntities
 {
-    //Ienumerables statt Listen für alles#
     // protected statt public für vererbungen
     public abstract class BasePiece
     {

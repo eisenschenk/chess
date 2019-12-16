@@ -21,10 +21,6 @@ namespace VnodeTest.GameEntities
         public (BasePiece start, int target) Lastmove { get; set; }
         public int MoveCounter { get; private set; } = 1;
         public int HalfMoveCounter { get; private set; }
-        //public IEngine Engine { get; }
-        // public (bool W, bool B) PlayedByEngine { get; }
-        // public string EngineMove { get; private set; } // debug string
-
         private TimeSpan _WhiteClock;
         public TimeSpan WhiteClock { get => _WhiteClock; private set => _WhiteClock = value; }
 
