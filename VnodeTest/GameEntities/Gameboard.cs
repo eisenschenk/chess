@@ -41,9 +41,19 @@ namespace VnodeTest.GameEntities
             BlackClock = playerClockTime;
         }
 
-        private Gameboard(IEnumerable<BasePiece> collection)
+        private Gameboard(IEnumerable<BasePiece> collection, Gameboard oldboard)
         {
             Board = collection.ToArray();
+            IsPromotable = oldboard.IsPromotable;
+            Winner = oldboard.Winner;
+            CurrentPlayerColor = oldboard.CurrentPlayerColor;
+            EnPassantTarget = oldboard.EnPassantTarget;
+            Lastmove = oldboard.Lastmove;
+            MoveCounter = oldboard.MoveCounter;
+            HalfMoveCounter = oldboard.HalfMoveCounter;
+            _WhiteClock = oldboard._WhiteClock;
+            _BlackClock = oldboard._BlackClock;
+            LastClockUpdate = oldboard.LastClockUpdate;
         }
 
         public void TryEngineMove(string engineMove, (bool, bool) engineControlled = default)
@@ -173,7 +183,7 @@ namespace VnodeTest.GameEntities
             Board[63] = new Rook(63, PieceColor.White);
         }
 
-        public Gameboard Copy() => new Gameboard(Board.Select(t => t?.Copy()));
+        public Gameboard Copy() => new Gameboard(Board.Select(t => t?.Copy()), this);
 
         public bool TryCastling(BasePiece start, int target)
         {

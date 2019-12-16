@@ -101,7 +101,11 @@ namespace VnodeTest
                     ThreadPool.QueueUserWorkItem(o =>
                     {
                         while (!Gameboard.GameOver)
+                        {
+                            var _gameboard = Gameboard.Copy();
                             Gameboard.TryEngineMove(Enginemove = Engine.GetEngineMove(Gameboard.GetFeNotation()), Game.PlayedByEngine);
+                            GameRepository.Instance.UpdateGame(Game.ID, _gameboard);
+                        }
                     });
             }
         }
@@ -235,7 +239,7 @@ namespace VnodeTest
         private void Select(int target)
         {
             //eigener Select für Promotion bzw.RenderTile mit Onclick param?
-            if (Gameboard.IsPromotable &&  PlayerColor != Gameboard.CurrentPlayerColor)
+            if (Gameboard.IsPromotable && PlayerColor != Gameboard.CurrentPlayerColor)
             {
                 Selected = Gameboard.Board[Gameboard.Lastmove.target];
                 Gameboard.Board[Selected.Position] = PromotionSelect[target];
@@ -253,17 +257,23 @@ namespace VnodeTest
                 else if (Selected == Gameboard.Board[target])
                     Selected = null;
                 else if (Selected != null)
-                    if (Gameboard.TryMove(Selected, target))
+                {
+                    var gameboard = Gameboard.Copy();
+                    if (gameboard.TryMove(Selected, target))
                     {
+                        GameRepository.Instance.UpdateGame(Game.ID, gameboard);
                         Selected = null;
                         ThreadPool.QueueUserWorkItem(o =>
                         {
+                            var _gameboard = Gameboard.Copy();
                             if (Game.PlayedByEngine.B && Gameboard.CurrentPlayerColor == PieceColor.Black)
-                                Gameboard.TryEngineMove(Enginemove = Engine.GetEngineMove(Gameboard.GetFeNotation()));
+                                _gameboard.TryEngineMove(Enginemove = Engine.GetEngineMove(Gameboard.GetFeNotation()));
                             else if (Game.PlayedByEngine.W && Gameboard.CurrentPlayerColor == PieceColor.White)
-                                Gameboard.TryEngineMove(Enginemove = Engine.GetEngineMove(Gameboard.GetFeNotation()));
+                                _gameboard.TryEngineMove(Enginemove = Engine.GetEngineMove(Gameboard.GetFeNotation()));
+                            GameRepository.Instance.UpdateGame(Game.ID, _gameboard);
                         });
                     }
+                }
             }
         }
 
