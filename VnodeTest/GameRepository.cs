@@ -38,9 +38,13 @@ namespace VnodeTest
             return game;
         }
 
+        public void UpdateGame(int key, Gameboard board)
+        {
+            Store[key].Gameboard = board;
+        }
+
         public bool TryGetGame(int key, out Game game) => Store.TryGetValue(key, out game);
     }
-    //TODO: playedbyengine hier rein
     class Game
     {
         public int ID { get; }
@@ -48,7 +52,7 @@ namespace VnodeTest
         public bool HasBlackPlayer { get; set; }
         public bool HasWhitePlayer { get; set; }
         public bool HasOpenSpots => !HasBlackPlayer || !HasWhitePlayer;
-        public Gameboard Gameboard { get; }
+        public Gameboard Gameboard { get; set; }
         public (bool W, bool B) PlayedByEngine { get; set; }
 
         public Game(int id, Gamemode gamemode, Gameboard gameboard)

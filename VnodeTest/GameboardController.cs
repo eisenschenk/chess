@@ -62,7 +62,8 @@ namespace VnodeTest
             int key = int.Parse(_key);
             while (GameRepository.Instance.TryGetGame(key, out game))
             {
-                if (!game.HasOpenSpots)
+                if ((gamemode == Gamemode.PvP && !game.HasOpenSpots)
+                     || ((gamemode == Gamemode.EvE || gamemode == Gamemode.PvE) && game.HasOpenSpots))
                     key++;
                 else
                     break;
