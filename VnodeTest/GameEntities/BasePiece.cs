@@ -126,7 +126,7 @@ namespace VnodeTest.GameEntities
                     .Where(t => t != null && t.Color == Color && t is King)
                     .Single().Position;
                 var enemyPieces = futureGameBoard.Board.Where(x => x != null && x.Color != Color);
-
+                var _out = !enemyPieces.SelectMany(t => t.GetPotentialMovements(futureGameBoard)).Contains(kingSameColorPosition);
                 return !enemyPieces.SelectMany(t => t.GetPotentialMovements(futureGameBoard)).Contains(kingSameColorPosition);
             });
         }
@@ -136,7 +136,7 @@ namespace VnodeTest.GameEntities
             var futureGameBoard = gameboard.Copy();
             futureGameBoard.Board[target] = Copy();
             futureGameBoard.Board[Position] = null;
-            futureGameBoard.Board[target].Position = futureGameBoard.Board[target].Position;
+            futureGameBoard.Board[target].Position = target;
             return futureGameBoard;
         }
 
