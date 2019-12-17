@@ -62,8 +62,7 @@ namespace VnodeTest
         private TimeSpan _BlackClock;
         public TimeSpan BlackClock { get => _BlackClock; private set => _BlackClock = value; }
         private DateTime LastClockUpdate;
-        public int InternalMoveCounter { get; private set; } = 0;
-        public readonly Dictionary<int, Gameboard> Moves = new Dictionary<int, Gameboard>();
+        public readonly List<(Gameboard Board, (BasePiece start, int target) LastMove)> Moves = new List<(Gameboard Board, (BasePiece start, int target) LastMove)>();
 
         public Game(int id, Gamemode gamemode, Gameboard gameboard, TimeSpan playerClockTime)
         {
@@ -108,8 +107,7 @@ namespace VnodeTest
                         'r' => new Rook(_engineMove.target, CurrentPlayerColor),
                         _ => default
                     };
-                Moves.Add(InternalMoveCounter, newBoard);
-                InternalMoveCounter++;
+                Moves.Add((newBoard, Lastmove));
                 Gameboard = newBoard;
             }
         }
@@ -119,8 +117,7 @@ namespace VnodeTest
             var newBoard = Gameboard.Copy();
             if (newBoard.TryMove(start, target, out newBoard, this, engineControlled))
             {
-                Moves.Add(InternalMoveCounter, newBoard);
-                InternalMoveCounter++;
+                Moves.Add((newBoard, Lastmove));
                 Gameboard = newBoard;
                 return true;
             }

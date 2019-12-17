@@ -21,6 +21,7 @@ namespace VnodeTest
         private string Enginemove;
         public BasePiece Selected { get; set; }
         private BasePiece[] PromotionSelect = new BasePiece[4];
+        private (Gameboard Board, (BasePiece start, int target) LastMove) SelectedPreviousMove;
 
 
         public GameboardController()
@@ -40,11 +41,11 @@ namespace VnodeTest
         {
             var gameroomDisplay = Gameroom == default ? "Random Room" : $"Room {Gameroom}";
             return Div(
-                Text("Player vs. AI Start", Styles.Btn & Styles.MX2, () => SelectGameMode(Gamemode.PvE)),
-                Text("AI vs. AI Start", Styles.MX2 & Styles.Btn, () => SelectGameMode(Gamemode.EvE)),
+                Text("Player vs. AI Start", Styles.Btn & Styles.MP4, () => SelectGameMode(Gamemode.PvE)),
+                Text("AI vs. AI Start", Styles.MP4 & Styles.Btn, () => SelectGameMode(Gamemode.EvE)),
                 Row(
-                    Text($"Player vs. Player Start/Enter {gameroomDisplay}", Styles.MX2 & Styles.Btn, () => SelectGameMode(Gamemode.PvP, Gameroom.ToString())),
-                    Input(Gameroom, i => Gameroom = i, Styles.MX2, " Select Gameroom Nr.")
+                    Text($"Player vs. Player Start/Enter {gameroomDisplay}", Styles.MP4 & Styles.Btn, () => SelectGameMode(Gamemode.PvP, Gameroom.ToString())),
+                    Input(Gameroom, i => Gameroom = i, Styles.MP4, " Select Gameroom Nr.")
                 ),
                 GameRepository.Instance.Keys.Any()
                 ? Div(
@@ -54,7 +55,6 @@ namespace VnodeTest
                 : null
             );
         }
-
 
         private Game GetFittingGame(Gamemode gamemode, string _key)
         {
@@ -106,6 +106,22 @@ namespace VnodeTest
             }
         }
 
+        private VNode RenderPreviousMoves()
+        {
+            void SelectForRender((Gameboard Board, (BasePiece start, int target) LastMove) move)
+            {
+                if (SelectedPreviousMove == move)
+                    SelectedPreviousMove = (null, (null, 0));
+                else
+                    SelectedPreviousMove = move;
+            }
+            return Fragment(Game.Moves.Select(g =>
+                Text($"Show {Gameboard.ParseIntToString(g.LastMove.start.Position)} {Gameboard.ParseIntToString(g.LastMove.target)}",
+                SelectedPreviousMove == g ? Styles.SelectedBtn & Styles.MP4 : Styles.Btn & Styles.MP4,
+                () => SelectForRender(g)))
+            );
+        }
+
         public VNode Render()
         {
             return RefreshReference = RenderGameBoard();
@@ -121,26 +137,34 @@ namespace VnodeTest
 
         }
 
+        private VNode GetBoardVNode(Gameboard gameboard, (BasePiece start, int target) lastmove)
+        {
+            int rowSize = 8;
+            if (PlayerColor == PieceColor.White)
+                return Fragment(Enumerable.Range(0, 8)
+                          .Select(row => Row(gameboard.Board
+                          .Skip(rowSize * row)
+                          .Take(rowSize)
+                          .Select((p, col) => RenderTile(p, col, row, lastmove)))));
+            else
+                return Fragment(Enumerable.Range(0, 8).Reverse()
+                        .Select(row => Row(gameboard.Board
+                        .Skip(rowSize * row)
+                        .Take(rowSize)
+                        .Select((p, col) => RenderTile(p, col, row, lastmove))
+                        .Reverse())));
+        }
+
         //remember Enumerable range
         private VNode RenderBoard()
         {
-            VNode board;
-            int rowSize = 8;
-            if (PlayerColor == PieceColor.White)
-                board = Fragment(Enumerable.Range(0, 8)
-                          .Select(row => Row(Gameboard.Board
-                          .Skip(rowSize * row)
-                          .Take(rowSize)
-                          .Select((p, col) => RenderTile(p, col, row)))));
-            else
-                board = Fragment(Enumerable.Range(0, 8).Reverse()
-                        .Select(row => Row(Gameboard.Board
-                        .Skip(rowSize * row)
-                        .Take(rowSize)
-                        .Select((p, col) => RenderTile(p, col, row))
-                        .Reverse())));
+            VNode board = GetBoardVNode(Gameboard, Game.Lastmove);
+
             return Div(
-                board,
+                Row(
+                    Div(SelectedPreviousMove.Board != null ? GetBoardVNode(SelectedPreviousMove.Board, SelectedPreviousMove.LastMove) : board),
+                    Div(RenderPreviousMoves())
+                ),
                 Game.PlayedByEngine.B == true || Game.PlayedByEngine.W == true ? Text($"EngineMove: {Enginemove}") : null,
                 Text($"Time remaining White: {Game.WhiteClock:hh\\:mm\\:ss}"),
                 Text($"Time remaining Black: {Game.BlackClock:hh\\:mm\\:ss}"),
@@ -150,20 +174,26 @@ namespace VnodeTest
         }
 
         //remember onclick
-        private VNode RenderTile(BasePiece piece, int col, int row)
+        private VNode RenderTile(BasePiece piece, int col, int row, (BasePiece start, int target) lastmove = default)
         {
             var target = Gameboard.ConvertTo1D((col, row));
             Style lastMove = null;
-            if (Game.Lastmove.start != null
-                && (target == Game.Lastmove.start.Position && !Game.IsPromotable || target == Game.Lastmove.target && !Game.IsPromotable))
+            if (lastmove.start != null
+                && (target == lastmove.start.Position && !Game.IsPromotable || target == lastmove.target && !Game.IsPromotable))
                 lastMove = Styles.BCred;
-            return Div(
-                 GetBaseStyle(target) & (Gameboard.Board[target] != null && Gameboard.Board[target] == Selected ? Styles.Selected : GetBorderStyle(target)) & lastMove,
-                () => Select(target),
-                piece != null
-                ? Text(piece.Sprite, Styles.FontSize3)
-                : null
-            );
+            if (SelectedPreviousMove.Board == null)
+                return Div(
+                     GetBaseStyle(target) & (Gameboard.Board[target] != null && Gameboard.Board[target] == Selected ? Styles.Selected : GetBorderStyle(target)) & lastMove,
+                    () => Select(target),
+                    piece != null
+                    ? Text(piece.Sprite, Styles.FontSize3)
+                    : null
+                );
+            else
+                return Div(
+                     GetBaseStyle(target) & GetBorderStyle(target) & lastMove,
+                    piece != null ? Text(piece.Sprite, Styles.FontSize3) : null
+                );
         }
 
         private Style GetBaseStyle(int position)

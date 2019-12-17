@@ -254,7 +254,7 @@ namespace VnodeTest.GameEntities
             else
                 throw new Exception("error in TryMove() in AN");
         }
-
+       
         public (int X, int Y) ConvertTo2D(int index)
         {
             return (index % 8, index / 8);
@@ -277,42 +277,18 @@ namespace VnodeTest.GameEntities
         {
             var x = index % 8;
             var y = index / 8;
-            var yOut = y switch
-            {
-                0 => "8",
-                1 => "7",
-                2 => "6",
-                3 => "5",
-                4 => "4",
-                5 => "3",
-                6 => "2",
-                7 => "1",
-                _ => throw new Exception("error in int to string conversion y-value")
-            };
-            var xOut = ('a' + x).ToString();
+            var yOut = (8 - y).ToString();
+            var xOut = (char)('a' + x);
             return xOut + yOut;
         }
-
 
         public static int ParseStringYToInt(string input)
         {
             var c = input[input.Length - 1];
             if (c < '1' || c > '8')
                 throw new Exception("out of bounds Y");
-            return c switch
-            {
-                '1' => 7,
-                '2' => 6,
-                '3' => 5,
-                '4' => 4,
-                '5' => 3,
-                '6' => 2,
-                '7' => 1,
-                '8' => 0,
-                _ => default
-            };
+            return 8 - c;
         }
-
     }
 }
 

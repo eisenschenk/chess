@@ -49,6 +49,10 @@ namespace VnodeTest
                 Margin("2rem")
             ),
 
+            Def(MP4,
+                Margin("4px")
+            ),
+
             Def(Ml6,
                 Margin("0rem 0rem 0rem 6rem")
             ),
@@ -102,12 +106,6 @@ namespace VnodeTest
                 GetHoverRule("darkgreen")
             ),
 
-            Def(BaseBtn,
-                BorderRadius("5px"),
-                Width("fit-content"),
-                Padding("4px")
-            ),
-
             Def(AbortBtn,
                 BaseBtn,
                 BackgroundColor("red"),
@@ -116,7 +114,14 @@ namespace VnodeTest
 
             Def(SelectedBtn,
                 BaseBtn,
-                BackgroundColor("seagreen")
+                BackgroundColor("orange"),
+                GetHoverRule("orange")
+            ),
+
+            Def(BaseBtn,
+                BorderRadius("5px"),
+                Width("fit-content"),
+                Padding("4px")
             ),
 
             Def(Selected,
@@ -355,7 +360,7 @@ namespace VnodeTest
         public static readonly Style FontSize3;
 
         public static readonly Style H6;
-
+        public static readonly Style MP4;
         public static readonly Style M2;
         public static readonly Style Ml6;
         public static readonly Style MX2;
