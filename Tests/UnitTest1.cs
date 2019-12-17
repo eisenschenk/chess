@@ -1,6 +1,7 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VnodeTest.GameEntities;
+using VnodeTest;
 
 namespace Tests
 {
@@ -34,9 +35,10 @@ namespace Tests
         public void TestGame(string moveSource)
         {
             var moves = moveSource.Split('.');
-            var gameboard = new Gameboard(TimeSpan.FromDays(20));
+            var gameboard = new Gameboard();
+            var game = new Game(0, Gamemode.PvP, new Gameboard(), TimeSpan.FromDays(10));
             foreach (string move in moves)
-                gameboard.TryAlgebraicNotaionToMyNotaion(move);
+                gameboard.TryAlgebraicNotaionToMyNotaion(move, game);
         }
     }
 }

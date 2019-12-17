@@ -30,7 +30,7 @@ namespace VnodeTest
                 while (true)
                 {
                     Thread.Sleep(100);
-                    Gameboard?.UpdateClocks();
+                    Game?.UpdateClocks();
                     RefreshReference?.Refresh();
                 }
             });
@@ -63,13 +63,13 @@ namespace VnodeTest
             while (GameRepository.Instance.TryGetGame(key, out game))
             {
                 if ((gamemode == Gamemode.PvP && !game.HasOpenSpots)
-                     || ((gamemode == Gamemode.EvE || gamemode == Gamemode.PvE) && game.HasOpenSpots))
+                     || ((gamemode == Gamemode.EvE || gamemode == Gamemode.PvE) && !game.HasOpenSpots))
                     key++;
                 else
                     break;
             }
             if (game == default)
-                game = GameRepository.Instance.AddGame(key, gamemode, new Gameboard(TimeSpan.FromSeconds(30000000)));
+                game = GameRepository.Instance.AddGame(key, gamemode, new Gameboard());
 
             return game;
         }
@@ -100,12 +100,8 @@ namespace VnodeTest
                 if (gamemode == Gamemode.EvE)
                     ThreadPool.QueueUserWorkItem(o =>
                     {
-                        while (!Gameboard.GameOver)
-                        {
-                            var _gameboard = Gameboard.Copy();
-                            Gameboard.TryEngineMove(Enginemove = Engine.GetEngineMove(Gameboard.GetFeNotation()), Game.PlayedByEngine);
-                            GameRepository.Instance.UpdateGame(Game.ID, _gameboard);
-                        }
+                        while (!Game.GameOver)
+                            Game.TryEngineMove(Enginemove = Engine.GetEngineMove(Game.GetFeNotation()), Game.PlayedByEngine);
                     });
             }
         }
@@ -119,7 +115,7 @@ namespace VnodeTest
         {
             if (Gameboard == default)
                 return RenderGameModeSelection();
-            if (Gameboard.IsPromotable && PlayerColor != Gameboard.CurrentPlayerColor)
+            if (Game.IsPromotable && PlayerColor != Game.CurrentPlayerColor)
                 return RenderPromotionSelection();
             return RenderBoard();
 
@@ -146,10 +142,10 @@ namespace VnodeTest
             return Div(
                 board,
                 Game.PlayedByEngine.B == true || Game.PlayedByEngine.W == true ? Text($"EngineMove: {Enginemove}") : null,
-                Text($"Time remaining White: {Gameboard.WhiteClock:hh\\:mm\\:ss}"),
-                Text($"Time remaining Black: {Gameboard.BlackClock:hh\\:mm\\:ss}"),
+                Text($"Time remaining White: {Game.WhiteClock:hh\\:mm\\:ss}"),
+                Text($"Time remaining Black: {Game.BlackClock:hh\\:mm\\:ss}"),
                 Text($"Gameroom: {Game.ID}"),
-                Gameboard.GameOver ? RenderGameOver() : null
+                Game.GameOver ? RenderGameOver() : null
             );
         }
 
@@ -158,8 +154,8 @@ namespace VnodeTest
         {
             var target = Gameboard.ConvertTo1D((col, row));
             Style lastMove = null;
-            if (Gameboard.Lastmove.start != null
-                && (target == Gameboard.Lastmove.start.Position && !Gameboard.IsPromotable || target == Gameboard.Lastmove.target && !Gameboard.IsPromotable))
+            if (Game.Lastmove.start != null
+                && (target == Game.Lastmove.start.Position && !Game.IsPromotable || target == Game.Lastmove.target && !Game.IsPromotable))
                 lastMove = Styles.BCred;
             return Div(
                  GetBaseStyle(target) & (Gameboard.Board[target] != null && Gameboard.Board[target] == Selected ? Styles.Selected : GetBorderStyle(target)) & lastMove,
@@ -212,7 +208,7 @@ namespace VnodeTest
         private VNode RenderGameOver()
         {
             string winner;
-            switch (Gameboard.Winner)
+            switch (Game.Winner)
             {
                 case PieceColor.Black: winner = "Black won"; break;
                 case PieceColor.White: winner = "White won"; break;
@@ -224,7 +220,7 @@ namespace VnodeTest
 
         private VNode RenderPromotionSelection()
         {
-            Selected = Gameboard.Board[Gameboard.Lastmove.target];
+            Selected = Gameboard.Board[Game.Lastmove.target];
             PromotionSelect[0] = new Rook(0, Selected.Color);
             PromotionSelect[1] = new Knight(1, Selected.Color);
             PromotionSelect[2] = new Bishop(2, Selected.Color);
@@ -239,38 +235,34 @@ namespace VnodeTest
         private void Select(int target)
         {
             //eigener Select für Promotion bzw.RenderTile mit Onclick param?
-            if (Gameboard.IsPromotable && PlayerColor != Gameboard.CurrentPlayerColor)
+            if (Game.IsPromotable && PlayerColor != Game.CurrentPlayerColor)
             {
-                Selected = Gameboard.Board[Gameboard.Lastmove.target];
+                Selected = Gameboard.Board[Game.Lastmove.target];
                 Gameboard.Board[Selected.Position] = PromotionSelect[target];
                 Gameboard.Board[Selected.Position].Position = Selected.Position;
                 Selected = null;
-                Gameboard.IsPromotable = false;
+                Game.IsPromotable = false;
                 return;
             }
-            if (Gameboard.CurrentPlayerColor == PieceColor.White && Game.PlayedByEngine.W == false && PlayerColor == PieceColor.White
-                || Gameboard.CurrentPlayerColor == PieceColor.Black && Game.PlayedByEngine.B == false && PlayerColor == PieceColor.Black)
+            if (Game.CurrentPlayerColor == PieceColor.White && Game.PlayedByEngine.W == false && PlayerColor == PieceColor.White
+                || Game.CurrentPlayerColor == PieceColor.Black && Game.PlayedByEngine.B == false && PlayerColor == PieceColor.Black)
             {
 
-                if (Selected == null && Gameboard.Board[target] != null && Gameboard.Board[target].Color == Gameboard.CurrentPlayerColor)
+                if (Selected == null && Gameboard.Board[target] != null && Gameboard.Board[target].Color == Game.CurrentPlayerColor)
                     Selected = Gameboard.Board[target];
                 else if (Selected == Gameboard.Board[target])
                     Selected = null;
                 else if (Selected != null)
                 {
-                    var gameboard = Gameboard.Copy();
-                    if (gameboard.TryMove(Selected, target))
+                    if (Game.TryMove(Selected, target))
                     {
-                        GameRepository.Instance.UpdateGame(Game.ID, gameboard);
                         Selected = null;
                         ThreadPool.QueueUserWorkItem(o =>
                         {
-                            var _gameboard = Gameboard.Copy();
-                            if (Game.PlayedByEngine.B && Gameboard.CurrentPlayerColor == PieceColor.Black)
-                                _gameboard.TryEngineMove(Enginemove = Engine.GetEngineMove(Gameboard.GetFeNotation()));
-                            else if (Game.PlayedByEngine.W && Gameboard.CurrentPlayerColor == PieceColor.White)
-                                _gameboard.TryEngineMove(Enginemove = Engine.GetEngineMove(Gameboard.GetFeNotation()));
-                            GameRepository.Instance.UpdateGame(Game.ID, _gameboard);
+                            if (Game.PlayedByEngine.B && Game.CurrentPlayerColor == PieceColor.Black)
+                                Game.TryEngineMove(Enginemove = Engine.GetEngineMove(Game.GetFeNotation()));
+                            else if (Game.PlayedByEngine.W && Game.CurrentPlayerColor == PieceColor.White)
+                                Game.TryEngineMove(Enginemove = Engine.GetEngineMove(Game.GetFeNotation()));
                         });
                     }
                 }

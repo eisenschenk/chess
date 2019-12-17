@@ -133,9 +133,7 @@ namespace VnodeTest.GameEntities
         public Gameboard HypotheticalMove(Gameboard gameboard, int target)
         {
             var futureGameBoard = gameboard.Copy();
-            futureGameBoard.Board[target] = Copy();
-            futureGameBoard.Board[Position] = null;
-            futureGameBoard.Board[target].Position = target;
+            futureGameBoard.MovePieceInternal(this, target);
             return futureGameBoard;
         }
 

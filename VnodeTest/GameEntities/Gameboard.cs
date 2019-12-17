@@ -13,149 +13,22 @@ namespace VnodeTest.GameEntities
     public class Gameboard
     {
         public BasePiece[] Board { get; set; } = new BasePiece[64];
-        public bool IsPromotable { get; set; }
-        public bool GameOver => Winner.HasValue;
-        public PieceColor? Winner { get; set; }
-        public PieceColor CurrentPlayerColor { get; set; } = PieceColor.White;
         public int EnPassantTarget { get; set; } = -1;
-        public (BasePiece start, int target) Lastmove { get; set; }
-        public int MoveCounter { get; private set; } = 1;
-        public int HalfMoveCounter { get; private set; }
-        private TimeSpan _WhiteClock;
-        public TimeSpan WhiteClock { get => _WhiteClock; private set => _WhiteClock = value; }
-
-        private TimeSpan _BlackClock;
-        public TimeSpan BlackClock { get => _BlackClock; private set => _BlackClock = value; }
-        private DateTime LastClockUpdate;
 
         public BasePiece this[int x, int y]
         {
             get => Board[y * 8 + x];
             set => Board[y * 8 + x] = value;
         }
-        public Gameboard(TimeSpan playerClockTime, (bool, bool) playedByEngine = default, IEngine engine = default)
+        public Gameboard()
         {
             PutPiecesInStartingPosition();
-            LastClockUpdate = DateTime.Now;
-            WhiteClock = playerClockTime;
-            BlackClock = playerClockTime;
         }
 
-        private Gameboard(IEnumerable<BasePiece> collection, Gameboard oldboard)
+        private Gameboard(IEnumerable<BasePiece> collection, int enpassanttarget)
         {
             Board = collection.ToArray();
-            IsPromotable = oldboard.IsPromotable;
-            Winner = oldboard.Winner;
-            CurrentPlayerColor = oldboard.CurrentPlayerColor;
-            EnPassantTarget = oldboard.EnPassantTarget;
-            Lastmove = oldboard.Lastmove;
-            MoveCounter = oldboard.MoveCounter;
-            HalfMoveCounter = oldboard.HalfMoveCounter;
-            _WhiteClock = oldboard._WhiteClock;
-            _BlackClock = oldboard._BlackClock;
-            LastClockUpdate = oldboard.LastClockUpdate;
-        }
-
-        public void TryEngineMove(string engineMove, (bool, bool) engineControlled = default)
-        {
-            //EngineMove = Engine.GetEngineMove(GetFeNotation());
-            var _engineMove = GetCoordinates(engineMove);
-            TryMove(Board[_engineMove.start], _engineMove.target, engineControlled);
-            if (engineMove.Length >= 5)
-                Board[_engineMove.target] = engineMove[4] switch
-                {
-                    'q' => new Queen(_engineMove.target, CurrentPlayerColor),
-                    'n' => new Knight(_engineMove.target, CurrentPlayerColor),
-                    'b' => new Bishop(_engineMove.target, CurrentPlayerColor),
-                    'r' => new Rook(_engineMove.target, CurrentPlayerColor),
-                    _ => default
-                };
-        }
-
-        private static (int start, int target) GetCoordinates(string input)
-        {
-            var startX = ParseStringXToInt(input[0].ToString());
-            var startY = ParseStringYToInt(input[1].ToString());
-            var targetX = ParseStringXToInt(input[2].ToString());
-            var targetY = ParseStringYToInt(input[3].ToString());
-            return (startX + startY * 8, targetX + targetY * 8);
-        }
-
-        public string GetFeNotation()
-        {
-            int emptyCount = 0;
-            string output = string.Empty;
-
-
-            for (int y = 0; y < 8; y++)
-                for (int x = 0; x < 8; x++)
-                {
-                    var piece = this[x, y];
-
-                    if (x == 0 && y >= 1)
-                    {
-                        if (emptyCount != 0)
-                        {
-                            output += emptyCount.ToString();
-                            emptyCount = 0;
-                        }
-                        output += "/";
-                    }
-                    if (piece == null)
-                        emptyCount++;
-
-                    if (piece != null)
-                    {
-                        if (emptyCount != 0)
-                            output += emptyCount.ToString();
-                        emptyCount = 0;
-                        output += piece.Value switch
-                        {
-                            PieceValue.King => piece.Color == PieceColor.White ? "K" : "k",
-                            PieceValue.Queen => piece.Color == PieceColor.White ? "Q" : "q",
-                            PieceValue.Bishop => piece.Color == PieceColor.White ? "B" : "b",
-                            PieceValue.Knight => piece.Color == PieceColor.White ? "N" : "n",
-                            PieceValue.Rook => piece.Color == PieceColor.White ? "R" : "r",
-                            PieceValue.Pawn => piece.Color == PieceColor.White ? "P" : "p",
-                            _ => throw new Exception("error FEN piece.value switch")
-                        };
-                    }
-                }
-            output += CurrentPlayerColor == PieceColor.White ? " w " : " b ";
-            output += GetPossibleCastles();
-            output += EnPassantTarget == -1 ? $" {ParseIntToString(EnPassantTarget)} " : " - ";
-            output += $"{HalfMoveCounter} ";
-            output += $"{MoveCounter}";
-            return output;
-        }
-
-        private string GetPossibleCastles()
-        {
-            string CheckCastle(int king, int rook)
-            {
-                string _output = string.Empty;
-                if (Board[rook] != null && !Board[rook].HasMoved
-                    && Board[king] != null && !Board[king].HasMoved)
-                    if (Board[king].Color == PieceColor.White)
-                    {
-                        if (king > rook)
-                            return _output += "Q";
-                        else
-                            return _output += "K";
-                    }
-                    else
-                    {
-                        if (king > rook)
-                            return _output += "q";
-                        else
-                            return _output += "k";
-                    }
-                return _output;
-            }
-            string output = CheckCastle(60, 63);
-            output += CheckCastle(60, 56);
-            output += CheckCastle(4, 7);
-            return output += CheckCastle(4, 0);
+            EnPassantTarget = enpassanttarget;
         }
 
         private void PutPiecesInStartingPosition()
@@ -183,9 +56,9 @@ namespace VnodeTest.GameEntities
             Board[63] = new Rook(63, PieceColor.White);
         }
 
-        public Gameboard Copy() => new Gameboard(Board.Select(t => t?.Copy()), this);
+        public Gameboard Copy() => new Gameboard(Board.ToArray(), EnPassantTarget);
 
-        public bool TryCastling(BasePiece start, int target)
+        public bool TryCastling(BasePiece start, int target, out Gameboard gameboard, Game game)
         {
             if (start is King)
             {
@@ -197,81 +70,35 @@ namespace VnodeTest.GameEntities
                         direction *= -1;
                     //moving king&rook
                     var startPosition = start.Position;
-                    MovePiece(start, start.Position + 2 * direction);
+                    MovePiece(start, start.Position + 2 * direction, game);
                     if (direction > 0)
                         MovePieceInternal(Board[3 * direction + startPosition], startPosition + direction);
                     else
                         MovePieceInternal(Board[4 * direction + startPosition], startPosition + direction);
+                    gameboard = this.Copy();
                     return true;
                 }
             }
+            gameboard = this.Copy();
             return false;
         }
 
-        public bool TryMove(BasePiece start, int target, (bool, bool) engineControlled = default)
+        public bool TryMove(BasePiece start, int target, out Gameboard gameboard, Game game, (bool, bool) engineControlled = default)
         {
-            if (TryCastling(start, target))
+            if (TryCastling(start, target, out gameboard, game))
                 return true;
 
             if (!start.GetValidMovements(this).Contains(target))
                 return false;
 
             if (Board[target] != null || start is Pawn)
-                HalfMoveCounter = 0;
+                game.HalfMoveCounter = 0;
             else
-                HalfMoveCounter++;
-            MovePiece(start, target, engineControlled);
+                game.HalfMoveCounter++;
+            MovePiece(start, target, game, engineControlled);
+            gameboard = this.Copy();
             return true;
         }
-
-        private readonly object UpdateClockLock = new object();
-
-        public void UpdateClocks() => UpdateClocks(false);
-
-        private void UpdateClocks(bool changeCurrentPlayer)
-        {
-            lock (UpdateClockLock)
-            {
-                var now = DateTime.Now;
-                void updateColor(PieceColor color, ref TimeSpan clock)
-                {
-                    if (CurrentPlayerColor != color)
-                        return;
-                    clock -= now - LastClockUpdate;
-                    if (clock <= TimeSpan.Zero)
-                        Winner = color;
-                }
-                updateColor(PieceColor.Black, ref _BlackClock);
-                updateColor(PieceColor.White, ref _WhiteClock);
-                LastClockUpdate = now;
-                if (changeCurrentPlayer)
-                    CurrentPlayerColor = InverseColor();
-            }
-        }
-
-        private void ActionsAfterMoveSuccess(BasePiece target, (bool, bool) engineControlled = default)
-        {
-            TryEnablePromotion(target, engineControlled);
-            UpdateClocks(changeCurrentPlayer: true);
-            if (CurrentPlayerColor == PieceColor.White)
-                MoveCounter++;
-            if (CheckForGameOver())
-                Winner = InverseColor();
-        }
-
-        public bool CheckForGameOver()
-        {
-            if (HalfMoveCounter >= 50)
-            {
-                Winner = PieceColor.Zero;
-                return true;
-            }
-            foreach (BasePiece piece in Board.Where(t => t != null && t.Color == CurrentPlayerColor))
-                if (piece.GetValidMovements(this).Any())
-                    return false;
-            return true;
-        }
-
 
         public bool CheckDetection(PieceColor color)
         {
@@ -282,38 +109,30 @@ namespace VnodeTest.GameEntities
             return false;
         }
 
-        private void MovePieceInternal(BasePiece start, int target)
+        public void MovePieceInternal(BasePiece start, int target)
         {
-            Board[target] = start;
+            Board[target] = start.Copy();
             Board[start.Position] = null;
             Board[target].Position = target;
         }
-        private void MovePiece(BasePiece start, int target, (bool, bool) engineControlled = default)
+
+        private void MovePiece(BasePiece start, int target, Game game = null, (bool, bool) engineControlled = default)
         {
             if (start is Pawn)
             {
                 var enPassant = EnPassantTarget;
                 EnPassantTarget = -1;
                 if (target == enPassant)
-                    Board[Lastmove.target] = null;
+                    Board[game.Lastmove.target] = null;
                 else if (Math.Abs(start.PositionXY.Y - ConvertTo2D(target).Y) == 2)
                     EnPassantTarget = start.PositionXY.X + (start.Color == PieceColor.Black ? (start.PositionXY.Y + 1) * 8 : (start.PositionXY.Y - 1) * 8);
             }
-            Lastmove = (start.Copy(), target);
+            game.Lastmove = (start.Copy(), target);
             MovePieceInternal(start, target);
-            ActionsAfterMoveSuccess(Board[target], engineControlled);
+            game.ActionsAfterMoveSuccess(this.Copy().Board[target], game, engineControlled);
         }
 
-        public void TryEnablePromotion(BasePiece piece, (bool W, bool B) engineControlled = default)
-        {
-            if (piece is Pawn && (piece.Position > 55 || piece.Position < 7))
-            {
-                if ((CurrentPlayerColor == PieceColor.White && !engineControlled.W) || (CurrentPlayerColor == PieceColor.Black && !engineControlled.B))
-                    IsPromotable = true;
-            }
-        }
-
-        private bool TryAnCastling(string notation, IEnumerable<BasePiece> _pieces)
+        private bool TryAnCastling(string notation, IEnumerable<BasePiece> _pieces, Game game)
         {
 
             if (notation.Contains("0-0") || notation.Contains("O-O"))
@@ -321,9 +140,9 @@ namespace VnodeTest.GameEntities
                 var king = _pieces.Where(k => k is King).Single();
                 // implement +
                 if (notation == "0-0" || notation == "O-O")
-                    TryMove(king, ConvertTo1D((king.PositionXY.X + 2, king.PositionXY.Y)));
+                    game.TryMove(king, ConvertTo1D((king.PositionXY.X + 2, king.PositionXY.Y)));
                 else
-                    TryMove(king, ConvertTo1D((king.PositionXY.X - 2, king.PositionXY.Y)));
+                    game.TryMove(king, ConvertTo1D((king.PositionXY.X - 2, king.PositionXY.Y)));
                 return true;
             }
             return false;
@@ -362,24 +181,19 @@ namespace VnodeTest.GameEntities
             return _pieces;
         }
 
-        private PieceColor InverseColor()
-        {
-            if (CurrentPlayerColor == PieceColor.White)
-                return PieceColor.Black;
-            else return PieceColor.White;
-        }
 
-        private bool TryAnPromotion(Match match, IEnumerable<BasePiece> _pieces, int destination)
+
+        private bool TryAnPromotion(Match match, IEnumerable<BasePiece> _pieces, int destination, Game game)
         {
             if (match.Groups["promotion"].Value != "")
-                if (TryMove(_pieces.Single(), destination))
+                if (game.TryMove(_pieces.Single(), destination))
                 {
                     Board[destination] = match.Groups["promotion"].Value switch
                     {
-                        "=Q" => new Queen(destination, InverseColor()),
-                        "=R" => new Rook(destination, InverseColor()),
-                        "=N" => new Knight(destination, InverseColor()),
-                        "=B" => new Bishop(destination, InverseColor()),
+                        "=Q" => new Queen(destination, game.InverseColor()),
+                        "=R" => new Rook(destination, game.InverseColor()),
+                        "=N" => new Knight(destination, game.InverseColor()),
+                        "=B" => new Bishop(destination, game.InverseColor()),
                         _ => throw new Exception("error in promotion")
                     };
                     return true;
@@ -395,11 +209,11 @@ namespace VnodeTest.GameEntities
             return _pieces;
         }
 
-        private bool TryEndGame(string notation)
+        private bool TryEndGame(string notation, Game game)
         {
             if (notation.Contains("1-0") || notation.Contains("0-1") || notation.Contains("½–½"))
             {
-                Winner = notation switch
+                game.Winner = notation switch
                 {
                     "1-0" => PieceColor.White,
                     "0-1" => PieceColor.Black,
@@ -412,17 +226,17 @@ namespace VnodeTest.GameEntities
 
         }
 
-        public bool TryAlgebraicNotaionToMyNotaion(string notation)
+        public bool TryAlgebraicNotaionToMyNotaion(string notation, Game game)
         {
             var match = Regex.Match(notation, "^(?<piece>[KQRNB]?)(?<sourceX>[a-h]?)(?<sourceY>[1-8]?)(?<captures>x?)(?<destination>[a-h][1-8])(?<promotion>(=[QRNB])?)(?<check>\\+?)(?<mate>#?)$",
                     RegexOptions.Singleline & RegexOptions.ExplicitCapture);
 
             //_pieces where !=empty && correct color
-            var _pieces = Board.Where(p => p != null && p.Color == CurrentPlayerColor);
+            var _pieces = Board.Where(p => p != null && p.Color == game.CurrentPlayerColor);
 
-            if (TryEndGame(notation))
+            if (TryEndGame(notation, game))
                 return true;
-            if (TryAnCastling(notation, _pieces))
+            if (TryAnCastling(notation, _pieces, game))
                 return true;
 
             var destination = ConvertTo1D((ParseStringXToInt(match.Groups["destination"].Value), ParseStringYToInt(match.Groups["destination"].Value)));
@@ -432,10 +246,10 @@ namespace VnodeTest.GameEntities
             _pieces = GetCorrectDestination(destination, _pieces);
             var pieces = _pieces.ToArray();
 
-            if (TryAnPromotion(match, pieces, destination))
+            if (TryAnPromotion(match, pieces, destination, game))
                 return true;
 
-            if (TryMove(pieces.Single(), destination))
+            if (game.TryMove(pieces.Single(), destination))
                 return true;
             else
                 throw new Exception("error in TryMove() in AN");
@@ -459,7 +273,7 @@ namespace VnodeTest.GameEntities
             return c - 'a';
         }
 
-        private static string ParseIntToString(int index)
+        public static string ParseIntToString(int index)
         {
             var x = index % 8;
             var y = index / 8;

@@ -27,39 +27,52 @@ namespace VnodeTest
 
         private readonly Dictionary<int, Game> Store = new Dictionary<int, Game>();
 
-
-
         public IEnumerable<int> Keys => Store.Keys;
 
         public Game AddGame(int key, Gamemode mode, Gameboard board)
         {
-            var game = new Game(key, mode, board);
+            var game = new Game(key, mode, board, TimeSpan.FromSeconds(30000000));
             Store[key] = game;
             return game;
         }
 
-        public void UpdateGame(int key, Gameboard board)
-        {
-            Store[key].Gameboard = board;
-        }
 
         public bool TryGetGame(int key, out Game game) => Store.TryGetValue(key, out game);
     }
-    class Game
+    public class Game
     {
         public int ID { get; }
         public Gamemode Gamemode { get; }
         public bool HasBlackPlayer { get; set; }
+
         public bool HasWhitePlayer { get; set; }
         public bool HasOpenSpots => !HasBlackPlayer || !HasWhitePlayer;
-        public Gameboard Gameboard { get; set; }
+        public Gameboard Gameboard { get; private set; }
         public (bool W, bool B) PlayedByEngine { get; set; }
+        public bool IsPromotable { get; set; }
+        public bool GameOver => Winner.HasValue;
+        public PieceColor? Winner { get; set; }
+        public PieceColor CurrentPlayerColor { get; set; } = PieceColor.White;
+        public (BasePiece start, int target) Lastmove { get; set; }
+        public int MoveCounter { get; set; } = 1;
+        public int HalfMoveCounter { get; set; }
+        private TimeSpan _WhiteClock;
+        public TimeSpan WhiteClock { get => _WhiteClock; private set => _WhiteClock = value; }
 
-        public Game(int id, Gamemode gamemode, Gameboard gameboard)
+        private TimeSpan _BlackClock;
+        public TimeSpan BlackClock { get => _BlackClock; private set => _BlackClock = value; }
+        private DateTime LastClockUpdate;
+        public int InternalMoveCounter { get; private set; } = 0;
+        public readonly Dictionary<int, Gameboard> Moves = new Dictionary<int, Gameboard>();
+
+        public Game(int id, Gamemode gamemode, Gameboard gameboard, TimeSpan playerClockTime)
         {
             ID = id;
             Gamemode = gamemode;
             Gameboard = gameboard;
+            LastClockUpdate = DateTime.Now;
+            WhiteClock = playerClockTime;
+            BlackClock = playerClockTime;
             PlayedByEngine = gamemode switch
             {
                 Gamemode.PvP => (false, false),
@@ -67,6 +80,191 @@ namespace VnodeTest
                 Gamemode.EvE => (true, true),
                 _ => throw new Exception("error game switch")
             };
+        }
+
+        private static (int start, int target) GetCoordinates(string input)
+        {
+            var startX = Gameboard.ParseStringXToInt(input[0].ToString());
+            var startY = Gameboard.ParseStringYToInt(input[1].ToString());
+            var targetX = Gameboard.ParseStringXToInt(input[2].ToString());
+            var targetY = Gameboard.ParseStringYToInt(input[3].ToString());
+            return (startX + startY * 8, targetX + targetY * 8);
+        }
+
+        //TODO naming
+        public void TryEngineMove(string engineMove, (bool, bool) engineControlled = default)
+        {
+            var _engineMove = GetCoordinates(engineMove);
+            var newBoard = Gameboard.Copy();
+            if (newBoard.TryMove(newBoard.Board[_engineMove.start], _engineMove.target, out var newboard, this, engineControlled))
+            {
+                newBoard = newboard;
+                if (engineMove.Length >= 5)
+                    newBoard.Board[_engineMove.target] = engineMove[4] switch
+                    {
+                        'q' => new Queen(_engineMove.target, CurrentPlayerColor),
+                        'n' => new Knight(_engineMove.target, CurrentPlayerColor),
+                        'b' => new Bishop(_engineMove.target, CurrentPlayerColor),
+                        'r' => new Rook(_engineMove.target, CurrentPlayerColor),
+                        _ => default
+                    };
+                Moves.Add(InternalMoveCounter, newBoard);
+                InternalMoveCounter++;
+                Gameboard = newBoard;
+            }
+        }
+
+        public bool TryMove(BasePiece start, int target, (bool, bool) engineControlled = default)
+        {
+            var newBoard = Gameboard.Copy();
+            if (newBoard.TryMove(start, target, out newBoard, this, engineControlled))
+            {
+                Moves.Add(InternalMoveCounter, newBoard);
+                InternalMoveCounter++;
+                Gameboard = newBoard;
+                return true;
+            }
+            return false;
+        }
+        //TODO stringbuilder
+        public string GetFeNotation()
+        {
+            int emptyCount = 0;
+            string output = string.Empty;
+
+            for (int y = 0; y < 8; y++)
+                for (int x = 0; x < 8; x++)
+                {
+                    var piece = Gameboard[x, y];
+
+                    if (x == 0 && y >= 1)
+                    {
+                        if (emptyCount != 0)
+                        {
+                            output += emptyCount.ToString();
+                            emptyCount = 0;
+                        }
+                        output += "/";
+                    }
+                    if (piece == null)
+                        emptyCount++;
+
+                    if (piece != null)
+                    {
+                        if (emptyCount != 0)
+                            output += emptyCount.ToString();
+                        emptyCount = 0;
+                        output += piece.Value switch
+                        {
+                            PieceValue.King => piece.Color == PieceColor.White ? "K" : "k",
+                            PieceValue.Queen => piece.Color == PieceColor.White ? "Q" : "q",
+                            PieceValue.Bishop => piece.Color == PieceColor.White ? "B" : "b",
+                            PieceValue.Knight => piece.Color == PieceColor.White ? "N" : "n",
+                            PieceValue.Rook => piece.Color == PieceColor.White ? "R" : "r",
+                            PieceValue.Pawn => piece.Color == PieceColor.White ? "P" : "p",
+                            _ => throw new Exception("error FEN piece.value switch")
+                        };
+                    }
+                }
+            output += CurrentPlayerColor == PieceColor.White ? " w " : " b ";
+            output += GetPossibleCastles();
+            output += Gameboard.EnPassantTarget == -1 ? $" {Gameboard.ParseIntToString(Gameboard.EnPassantTarget)} " : " - ";
+            output += $"{HalfMoveCounter} ";
+            output += $"{MoveCounter}";
+            return output;
+        }
+
+        private string GetPossibleCastles()
+        {
+            string CheckCastle(int king, int rook)
+            {
+                string _output = string.Empty;
+                if (Gameboard.Board[rook] != null && !Gameboard.Board[rook].HasMoved
+                    && Gameboard.Board[king] != null && !Gameboard.Board[king].HasMoved)
+                    if (Gameboard.Board[king].Color == PieceColor.White)
+                    {
+                        if (king > rook)
+                            return _output += "Q";
+                        else
+                            return _output += "K";
+                    }
+                    else
+                    {
+                        if (king > rook)
+                            return _output += "q";
+                        else
+                            return _output += "k";
+                    }
+                return _output;
+            }
+            string output = CheckCastle(60, 63);
+            output += CheckCastle(60, 56);
+            output += CheckCastle(4, 7);
+            return output += CheckCastle(4, 0);
+        }
+
+        private void TryEnablePromotion(BasePiece piece, (bool W, bool B) engineControlled = default)
+        {
+            if (piece is Pawn && (piece.Position > 55 || piece.Position < 7))
+            {
+                if ((CurrentPlayerColor == PieceColor.White && !engineControlled.W) || (CurrentPlayerColor == PieceColor.Black && !engineControlled.B))
+                    IsPromotable = true;
+            }
+        }
+
+        public void ActionsAfterMoveSuccess(BasePiece target, Game game = null, (bool, bool) engineControlled = default)
+        {
+            TryEnablePromotion(target, engineControlled);
+            game?.UpdateClocks(changeCurrentPlayer: true);
+            if (CurrentPlayerColor == PieceColor.White)
+                MoveCounter++;
+            if (CheckForGameOver())
+                Winner = InverseColor();
+        }
+
+        public bool CheckForGameOver()
+        {
+            if (HalfMoveCounter >= 50)
+            {
+                Winner = PieceColor.Zero;
+                return true;
+            }
+            foreach (BasePiece piece in Gameboard.Board.Where(t => t != null && t.Color == CurrentPlayerColor))
+                if (piece.GetValidMovements(Gameboard).Any())
+                    return false;
+            return true;
+        }
+
+        public PieceColor InverseColor()
+        {
+            if (CurrentPlayerColor == PieceColor.White)
+                return PieceColor.Black;
+            else return PieceColor.White;
+        }
+
+        private readonly object UpdateClockLock = new object();
+
+        public void UpdateClocks() => UpdateClocks(false);
+
+        public void UpdateClocks(bool changeCurrentPlayer)
+        {
+            lock (UpdateClockLock)
+            {
+                var now = DateTime.Now;
+                void updateColor(PieceColor color, ref TimeSpan clock)
+                {
+                    if (CurrentPlayerColor != color)
+                        return;
+                    clock -= now - LastClockUpdate;
+                    if (clock <= TimeSpan.Zero)
+                        Winner = color;
+                }
+                updateColor(PieceColor.Black, ref _BlackClock);
+                updateColor(PieceColor.White, ref _WhiteClock);
+                LastClockUpdate = now;
+                if (changeCurrentPlayer)
+                    CurrentPlayerColor = InverseColor();
+            }
         }
     }
 }
