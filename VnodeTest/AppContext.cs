@@ -5,13 +5,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using VnodeTest.BC.Account;
 
 namespace VnodeTest
 {
     public class AppContext
     {
-        //private readonly SomeDataProjection SomeDataProjection;
-        //private readonly SomeData.Handler SomeDataHandler;
+        private readonly AccountProjection AccountProjection;
+        private readonly Account.Handler AccountHandler;
 
         private readonly IRepository Repository;
 
@@ -31,13 +32,13 @@ namespace VnodeTest
             Repository = new Repository(store);
             var bus = MessageBus.Instance;
 
-            //SomeDataProjection = new SomeDataProjection(store, bus);
-            //SomeDataProjection.Init();
-            //SomeDataHandler = new SomeData.Handler(Repsitory, bus);
+            AccountProjection = new AccountProjection(store, bus);
+            AccountProjection.Init();
+            AccountHandler = new Account.Handler(Repository, bus);
         }
 
         public GameboardController CreateGameboardController() =>
-            new GameboardController();
+            new GameboardController(AccountProjection);
     }
 
 }

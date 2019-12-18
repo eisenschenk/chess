@@ -58,6 +58,15 @@
   <ItemGroup>
     <Compile Include="AppContext.cs" />
     <Compile Include="Application.cs" />
+    <Compile Include="BC\Account\Account.cs" />
+    <Compile Include="BC\Account\AccountProjection.cs" />
+    <Compile Include="BC\Account\Command\RegisterAccount.cs" />
+    <Compile Include="BC\Account\Event\AccountRegistered.cs" />
+    <Compile Include="BC\AggregateEvent.cs" />
+    <Compile Include="BC\Game\Command\OpenGame.cs" />
+    <Compile Include="BC\Game\Event\GameOpened.cs" />
+    <Compile Include="BC\Game\Game.cs" />
+    <Compile Include="BC\Game\GameProjection.cs" />
     <Compile Include="ColorThemeComponent.cs" />
     <Compile Include="GameboardController.cs" />
     <Compile Include="GameEntities\BasePiece.cs" />
@@ -92,5 +101,6 @@
       <Name>ACL.ES</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

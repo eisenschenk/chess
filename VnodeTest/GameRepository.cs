@@ -226,10 +226,7 @@ namespace VnodeTest
                 Winner = PieceColor.Zero;
                 return true;
             }
-            foreach (BasePiece piece in Gameboard.Board.Where(t => t != null && t.Color == CurrentPlayerColor))
-                if (piece.GetValidMovements(Gameboard).Any())
-                    return false;
-            return true;
+            return Gameboard.CheckMateDetection(Gameboard, CurrentPlayerColor);           
         }
 
         public PieceColor InverseColor()

@@ -22,14 +22,19 @@ namespace VnodeTest
         public BasePiece Selected { get; set; }
         private BasePiece[] PromotionSelect = new BasePiece[4];
         private (Gameboard Board, (BasePiece start, int target) LastMove) SelectedPreviousMove;
+        private bool Pause;
 
+        private readonly BC.Account.AccountProjection AccountProjection;
 
-        public GameboardController()
+        public GameboardController(BC.Account.AccountProjection accountProjection)
         {
+            AccountProjection = accountProjection;
             ThreadPool.QueueUserWorkItem(o =>
             {
                 while (true)
                 {
+                    while (Pause)
+                        Thread.Sleep(100);
                     Thread.Sleep(100);
                     Game?.UpdateClocks();
                     RefreshReference?.Refresh();
@@ -37,10 +42,20 @@ namespace VnodeTest
             });
         }
 
+        private string Username;
+        private string Password;
+
         private VNode RenderGameModeSelection()
         {
             var gameroomDisplay = Gameroom == default ? "Random Room" : $"Room {Gameroom}";
             return Div(
+
+                Input(Username, s => Username = s),
+                Input(Password, s => Password = s),
+                Text("create", Styles.Btn, () => BC.Account.Account.Commands.RegisterAccount(ACL.ES.AggregateID<BC.Account.Account>.Create(), Username, Password)),
+                Fragment(AccountProjection.Accounts.Select(a => Text($"{a.Username}, {a.Password}, {a.CreatedAt:G}"))),
+
+
                 Text("Player vs. AI Start", Styles.Btn & Styles.MP4, () => SelectGameMode(Gamemode.PvE)),
                 Text("AI vs. AI Start", Styles.MP4 & Styles.Btn, () => SelectGameMode(Gamemode.EvE)),
                 Row(
@@ -101,7 +116,11 @@ namespace VnodeTest
                     ThreadPool.QueueUserWorkItem(o =>
                     {
                         while (!Game.GameOver)
+                        {
+                            while (Pause)
+                                Thread.Sleep(100);
                             Game.TryEngineMove(Enginemove = Engine.GetEngineMove(Game.GetFeNotation()), Game.PlayedByEngine);
+                        }
                     });
             }
         }
@@ -165,7 +184,7 @@ namespace VnodeTest
             return Div(
                 Row(
                     Div(SelectedPreviousMove.Board != null ? GetBoardVNode(SelectedPreviousMove.Board, SelectedPreviousMove.LastMove) : board),
-                    Div(RenderPreviousMoves())
+                    Div(Text("Pause", Styles.AbortBtn & Styles.MP4, PauseGame), RenderPreviousMoves())
                 ),
                 Game.PlayedByEngine.B == true || Game.PlayedByEngine.W == true ? Text($"EngineMove: {Enginemove}") : null,
                 Text($"Time remaining White: {Game.WhiteClock:hh\\:mm\\:ss}"),
@@ -173,6 +192,11 @@ namespace VnodeTest
                 Text($"Gameroom: {Game.ID}"),
                 Game.GameOver ? RenderGameOver() : null
             );
+        }
+
+        private void PauseGame()
+        {
+            Pause = !Pause;
         }
 
         //remember onclick

@@ -255,7 +255,15 @@ namespace VnodeTest.GameEntities
             else
                 throw new Exception("error in TryMove() in AN");
         }
-        //PREMOVE gameboard instead of current one
+
+        public bool CheckMateDetection(Gameboard gameboard, PieceColor color)
+        {
+            foreach (BasePiece piece in gameboard.Board.Where(t => t != null && t.Color == color))
+                if (piece.GetValidMovements(gameboard).Any())
+                    return false;
+            return true;
+        }
+
         public string ParseToAN(BasePiece start, int target, Gameboard gameboard)
         {
             var targetXY = ConvertTo2D(target);
@@ -267,13 +275,21 @@ namespace VnodeTest.GameEntities
                 return "O-O";
             }
             var _pieces = gameboard.Board.Where(p => p != null && p.Color == start.Color);
+
+            //check & checkmate
+            var kingDifferentColorPosition = gameboard.Board.Where(t => t != null && t.Color != start.Color && t is King).Single().Position;
+            var check = !_pieces.SelectMany(t => t.GetValidMovements(gameboard)).Contains(kingDifferentColorPosition) ? string.Empty : "+";
+            check = CheckMateDetection(gameboard, start.Color) ? "#" : check;
+
             //Correct piece type
             _pieces = _pieces.Where(s => s.Sprite == start.Sprite);
+
             //destination
             _pieces = _pieces.Where(d => d.GetValidMovements(gameboard).Contains(target));
             var pieceLetter = GetCorrectSpriteAbreviation(start.Value, start.Color);
             var promotionLetter = start is Pawn && (targetXY.Y == 0 || targetXY.Y == 7) ? GetCorrectSpriteAbreviation(_pieces.First().Value, start.Color) : string.Empty;
             var capturePiece = gameboard.Board[target] == null ? string.Empty : "x";
+
             //xy-position the same
             var ypieces = _pieces.Where(n => n.PositionXY.Y == start.PositionXY.Y).ToArray();
             var xpieces = _pieces.Where(m => m.PositionXY.X == start.PositionXY.X).ToArray();
@@ -292,8 +308,10 @@ namespace VnodeTest.GameEntities
             string targetX = ParseIntToString(target)[0].ToString();
             string targetY = ParseIntToString(target)[1].ToString();
 
+            //game end
 
-            return $"{pieceLetter}{source}{capturePiece}{targetX}{targetY}{promotionLetter} ";
+
+            return $"{pieceLetter}{source}{capturePiece}{targetX}{targetY}{promotionLetter}{check}";
         }
 
         private string GetCorrectSpriteAbreviation(PieceValue value, PieceColor color)
@@ -353,7 +371,7 @@ namespace VnodeTest.GameEntities
             var c = input[input.Length - 1];
             if (c < '1' || c > '8')
                 throw new Exception("out of bounds Y");
-            return 8 - c;
+            return 55 - c + 1;
         }
     }
 }

@@ -125,7 +125,6 @@ namespace VnodeTest.GameEntities
                     .Where(t => t != null && t.Color == Color && t is King)
                     .Single().Position;
                 var enemyPieces = futureGameBoard.Board.Where(x => x != null && x.Color != Color);
-                var _out = !enemyPieces.SelectMany(t => t.GetPotentialMovements(futureGameBoard)).Contains(kingSameColorPosition);
                 return !enemyPieces.SelectMany(t => t.GetPotentialMovements(futureGameBoard)).Contains(kingSameColorPosition);
             });
         }
