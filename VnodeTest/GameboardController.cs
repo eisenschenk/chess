@@ -116,10 +116,12 @@ namespace VnodeTest
                     SelectedPreviousMove = move;
             }
             return Fragment(Game.Moves.Select(g =>
-                Text($"Show {Gameboard.ParseIntToString(g.LastMove.start.Position)} {Gameboard.ParseIntToString(g.LastMove.target)}",
-                SelectedPreviousMove == g ? Styles.SelectedBtn & Styles.MP4 : Styles.Btn & Styles.MP4,
-                () => SelectForRender(g)))
-            );
+                Game.Moves.IndexOf(g) >= 1
+                ? Text($"Show {Gameboard.ParseToAN(g.LastMove.start.Copy(), g.LastMove.target, Game.Moves[Game.Moves.IndexOf(g) - 1].Board.Copy())}",
+                    SelectedPreviousMove == g ? Styles.SelectedBtn & Styles.MP4 : Styles.Btn & Styles.MP4,
+                    () => SelectForRender(g))
+                : null
+            ));
         }
 
         public VNode Render()

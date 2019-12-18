@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 
 namespace VnodeTest.GameEntities
 {
+    // check & checkmate & win for previous moves display 
     public class Gameboard
     {
         public BasePiece[] Board { get; set; } = new BasePiece[64];
@@ -254,7 +255,72 @@ namespace VnodeTest.GameEntities
             else
                 throw new Exception("error in TryMove() in AN");
         }
-       
+        //PREMOVE gameboard instead of current one
+        public string ParseToAN(BasePiece start, int target, Gameboard gameboard)
+        {
+            var targetXY = ConvertTo2D(target);
+            //castling
+            if (start is King && Math.Abs(start.PositionXY.X - targetXY.X) == 2)
+            {
+                if (start.PositionXY.X > targetXY.X)
+                    return "O-O-O";
+                return "O-O";
+            }
+            var _pieces = gameboard.Board.Where(p => p != null && p.Color == start.Color);
+            //Correct piece type
+            _pieces = _pieces.Where(s => s.Sprite == start.Sprite);
+            //destination
+            _pieces = _pieces.Where(d => d.GetValidMovements(gameboard).Contains(target));
+            var pieceLetter = GetCorrectSpriteAbreviation(start.Value, start.Color);
+            var promotionLetter = start is Pawn && (targetXY.Y == 0 || targetXY.Y == 7) ? GetCorrectSpriteAbreviation(_pieces.First().Value, start.Color) : string.Empty;
+            var capturePiece = gameboard.Board[target] == null ? string.Empty : "x";
+            //xy-position the same
+            var ypieces = _pieces.Where(n => n.PositionXY.Y == start.PositionXY.Y).ToArray();
+            var xpieces = _pieces.Where(m => m.PositionXY.X == start.PositionXY.X).ToArray();
+            string sourceX = ParseIntToString(start.Position)[0].ToString();
+            string sourceY = ParseIntToString(start.Position)[1].ToString();
+            string source;
+            if (xpieces.Length == 1 && ypieces.Length == 1)
+                source = string.Empty;
+            else if (ypieces.Length > 1 && xpieces.Length == 1)
+                source = sourceX;
+            else if (xpieces.Length > 1 && ypieces.Length == 1)
+                source = sourceY;
+            else
+                source = sourceX + sourceY;
+
+            string targetX = ParseIntToString(target)[0].ToString();
+            string targetY = ParseIntToString(target)[1].ToString();
+
+
+            return $"{pieceLetter}{source}{capturePiece}{targetX}{targetY}{promotionLetter} ";
+        }
+
+        private string GetCorrectSpriteAbreviation(PieceValue value, PieceColor color)
+        {
+            if (color == PieceColor.White)
+                return value switch
+                {
+                    PieceValue.King => "K",
+                    PieceValue.Queen => "Q",
+                    PieceValue.Rook => "R",
+                    PieceValue.Bishop => "B",
+                    PieceValue.Knight => "N",
+                    PieceValue.Pawn => "",
+                    _ => throw new Exception("error in GetCorrectSpriteAbreviation White")
+                };
+            return value switch
+            {
+                PieceValue.King => "k",
+                PieceValue.Queen => "q",
+                PieceValue.Rook => "r",
+                PieceValue.Bishop => "b",
+                PieceValue.Knight => "n",
+                PieceValue.Pawn => "",
+                _ => throw new Exception("error in GetCorrectSpriteAbreviation White")
+            };
+        }
+
         public (int X, int Y) ConvertTo2D(int index)
         {
             return (index % 8, index / 8);

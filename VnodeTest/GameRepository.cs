@@ -69,6 +69,7 @@ namespace VnodeTest
             ID = id;
             Gamemode = gamemode;
             Gameboard = gameboard;
+            Moves.Add((gameboard,(null,0)));
             LastClockUpdate = DateTime.Now;
             WhiteClock = playerClockTime;
             BlackClock = playerClockTime;
@@ -89,7 +90,7 @@ namespace VnodeTest
             var targetY = Gameboard.ParseStringYToInt(input[3].ToString());
             return (startX + startY * 8, targetX + targetY * 8);
         }
-
+       
         //TODO naming
         public void TryEngineMove(string engineMove, (bool, bool) engineControlled = default)
         {
@@ -123,11 +124,10 @@ namespace VnodeTest
             }
             return false;
         }
-        //TODO stringbuilder
         public string GetFeNotation()
         {
             int emptyCount = 0;
-            string output = string.Empty;
+            StringBuilder stringBuilder = new StringBuilder();
 
             for (int y = 0; y < 8; y++)
                 for (int x = 0; x < 8; x++)
@@ -138,10 +138,10 @@ namespace VnodeTest
                     {
                         if (emptyCount != 0)
                         {
-                            output += emptyCount.ToString();
+                            stringBuilder.Append(emptyCount.ToString());
                             emptyCount = 0;
                         }
-                        output += "/";
+                        stringBuilder.Append("/");
                     }
                     if (piece == null)
                         emptyCount++;
@@ -149,9 +149,9 @@ namespace VnodeTest
                     if (piece != null)
                     {
                         if (emptyCount != 0)
-                            output += emptyCount.ToString();
+                            stringBuilder.Append(emptyCount.ToString());
                         emptyCount = 0;
-                        output += piece.Value switch
+                        stringBuilder.Append(piece.Value switch
                         {
                             PieceValue.King => piece.Color == PieceColor.White ? "K" : "k",
                             PieceValue.Queen => piece.Color == PieceColor.White ? "Q" : "q",
@@ -160,15 +160,15 @@ namespace VnodeTest
                             PieceValue.Rook => piece.Color == PieceColor.White ? "R" : "r",
                             PieceValue.Pawn => piece.Color == PieceColor.White ? "P" : "p",
                             _ => throw new Exception("error FEN piece.value switch")
-                        };
+                        });
                     }
                 }
-            output += CurrentPlayerColor == PieceColor.White ? " w " : " b ";
-            output += GetPossibleCastles();
-            output += Gameboard.EnPassantTarget == -1 ? $" {Gameboard.ParseIntToString(Gameboard.EnPassantTarget)} " : " - ";
-            output += $"{HalfMoveCounter} ";
-            output += $"{MoveCounter}";
-            return output;
+            stringBuilder.Append(CurrentPlayerColor == PieceColor.White ? " w " : " b ");
+            stringBuilder.Append(GetPossibleCastles());
+            stringBuilder.Append(Gameboard.EnPassantTarget == -1 ? $" {Gameboard.ParseIntToString(Gameboard.EnPassantTarget)} " : " - ");
+            stringBuilder.Append($"{HalfMoveCounter} ");
+            stringBuilder.Append($"{MoveCounter}");
+            return stringBuilder.ToString();
         }
 
         private string GetPossibleCastles()
