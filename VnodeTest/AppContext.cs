@@ -39,6 +39,9 @@ namespace VnodeTest
 
         public GameboardController CreateGameboardController() =>
             new GameboardController(AccountProjection);
+
+        public LoginController CreateLoginController() =>
+            new LoginController(AccountProjection);
     }
 
 }

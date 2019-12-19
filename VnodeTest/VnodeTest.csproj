@@ -60,7 +60,9 @@
     <Compile Include="Application.cs" />
     <Compile Include="BC\Account\Account.cs" />
     <Compile Include="BC\Account\AccountProjection.cs" />
+    <Compile Include="BC\Account\Command\LoginAccount.cs" />
     <Compile Include="BC\Account\Command\RegisterAccount.cs" />
+    <Compile Include="BC\Account\Event\AccountLoggedIn.cs" />
     <Compile Include="BC\Account\Event\AccountRegistered.cs" />
     <Compile Include="BC\AggregateEvent.cs" />
     <Compile Include="BC\Game\Command\OpenGame.cs" />
@@ -82,8 +84,10 @@
     <Compile Include="GameEntities\Queen.cs" />
     <Compile Include="GameEntities\Rook.cs" />
     <Compile Include="GameRepository.cs" />
+    <Compile Include="LoginController.cs" />
     <Compile Include="PaginationComponent.cs" />
     <Compile Include="GamemodeController.cs" />
+    <Compile Include="UserController.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RootController.cs" />

@@ -26,6 +26,10 @@ namespace VnodeTest.BC.Account
         {
             Dict.Add(@event.ID, new AccountEntry(@event.ID, @event.Username, @event.Password, @event.Timestamp));
         }
+        private void On(AccountLoggedIn @event)
+        {
+            Dict[@event.ID].LoggedIn = true;
+        }
     }
 
     public class AccountEntry
@@ -34,6 +38,7 @@ namespace VnodeTest.BC.Account
         public string Username { get; }
         public string Password { get; }
         public DateTimeOffset CreatedAt { get; }
+        public bool LoggedIn { get; set; }
 
         public AccountEntry(AccountID id, string username, string password, DateTimeOffset createdAt)
         {

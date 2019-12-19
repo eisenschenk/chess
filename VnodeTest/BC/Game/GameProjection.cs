@@ -35,6 +35,7 @@ namespace VnodeTest.BC.Game
         public GameID ID { get; }
         public int RepositoryID { get; }
         public Gamemode Gamemode { get; }
+        public bool LoggedIn;
         public GameEntry(GameID id, Gamemode gamemode)
         {
             ID = id;

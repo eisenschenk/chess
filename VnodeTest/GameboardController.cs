@@ -23,6 +23,7 @@ namespace VnodeTest
         private BasePiece[] PromotionSelect = new BasePiece[4];
         private (Gameboard Board, (BasePiece start, int target) LastMove) SelectedPreviousMove;
         private bool Pause;
+        public bool LoggedIn { get; set; }
 
         private readonly BC.Account.AccountProjection AccountProjection;
 
@@ -41,7 +42,8 @@ namespace VnodeTest
                 }
             });
         }
-
+        //create logincontroller
+        //create usercontroller add friend, see friend, play friend
         private string Username;
         private string Password;
 
@@ -50,10 +52,6 @@ namespace VnodeTest
             var gameroomDisplay = Gameroom == default ? "Random Room" : $"Room {Gameroom}";
             return Div(
 
-                Input(Username, s => Username = s),
-                Input(Password, s => Password = s),
-                Text("create", Styles.Btn, () => BC.Account.Account.Commands.RegisterAccount(ACL.ES.AggregateID<BC.Account.Account>.Create(), Username, Password)),
-                Fragment(AccountProjection.Accounts.Select(a => Text($"{a.Username}, {a.Password}, {a.CreatedAt:G}"))),
 
 
                 Text("Player vs. AI Start", Styles.Btn & Styles.MP4, () => SelectGameMode(Gamemode.PvE)),

@@ -15,6 +15,7 @@ namespace VnodeTest.BC.Account
         private bool Created = false;
         private string Username;
         private string Password;
+        private bool LoggedIn;
 
 
 
@@ -32,6 +33,8 @@ namespace VnodeTest.BC.Account
         {
             public static void RegisterAccount(AggregateID<Account> id, string username, string password) =>
                 MessageBus.Instance.Send(new RegisterAccount(id, username, password));
+            public static void LoginAccount(AggregateID<Account> id, string username, string password, GameboardController gameboardController) =>
+                MessageBus.Instance.Send(new LoginAccount(id, username, password, gameboardController));
         }
 
 
@@ -43,6 +46,13 @@ namespace VnodeTest.BC.Account
                 throw new Exception("password must be longer than 5 characters");
 
             yield return new AccountRegistered(command.ID, command.Username, command.Password);
+        }
+        public IEnumerable<IEvent> On(LoginAccount command)
+        {
+            if (string.IsNullOrWhiteSpace(command.Password))
+                throw new Exception("password cannot be empty");
+           
+                yield return new AccountLoggedIn(command.ID, command.Username, command.Password, command.GameboardController);
         }
 
 
@@ -56,6 +66,9 @@ namespace VnodeTest.BC.Account
                     ID = registered.ID;
                     Username = registered.Username;
                     Password = registered.Password;
+                    break;
+                case AccountLoggedIn loggedin:
+                    loggedin.GameboardController.LoggedIn = true;
                     break;
             }
         }

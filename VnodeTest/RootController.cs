@@ -16,11 +16,15 @@ namespace VnodeTest
         }
 
         //public VNode Render() => CurrentContent();
-        public VNode Render() => GameboardController.Render();
+        public VNode Render() => GameboardController.LoggedIn ? GameboardController.Render() : LoginController.Render(GameboardController);
 
         private GameboardController _GameboardController;
         private GameboardController GameboardController =>
             _GameboardController ??= ((Application)Application.Instance).AppContext.CreateGameboardController();
+
+        private LoginController _LoginController;
+        private LoginController LoginController =>
+            _LoginController ??= ((Application)Application.Instance).AppContext.CreateLoginController();
     }
 
 }
