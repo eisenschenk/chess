@@ -60,10 +60,14 @@
     <Compile Include="Application.cs" />
     <Compile Include="BC\Account\Account.cs" />
     <Compile Include="BC\Account\AccountProjection.cs" />
+    <Compile Include="BC\Account\Command\AddFriend.cs" />
+    <Compile Include="BC\Account\Command\DeleteFriend.cs" />
     <Compile Include="BC\Account\Command\LoginAccount.cs" />
     <Compile Include="BC\Account\Command\RegisterAccount.cs" />
     <Compile Include="BC\Account\Event\AccountLoggedIn.cs" />
     <Compile Include="BC\Account\Event\AccountRegistered.cs" />
+    <Compile Include="BC\Account\Event\FriendAdded.cs" />
+    <Compile Include="BC\Account\Event\FriendDeleted.cs" />
     <Compile Include="BC\AggregateEvent.cs" />
     <Compile Include="BC\Game\Command\OpenGame.cs" />
     <Compile Include="BC\Game\Event\GameOpened.cs" />
@@ -84,6 +88,7 @@
     <Compile Include="GameEntities\Queen.cs" />
     <Compile Include="GameEntities\Rook.cs" />
     <Compile Include="GameRepository.cs" />
+    <Compile Include="ISearchable.cs" />
     <Compile Include="LoginController.cs" />
     <Compile Include="PaginationComponent.cs" />
     <Compile Include="GamemodeController.cs" />
@@ -94,6 +99,7 @@
     <Compile Include="SearchbarComponent.cs" />
     <Compile Include="Session.cs" />
     <Compile Include="Styles.cs" />
+    <Compile Include="VNodeExtensions.cs" />
     <Compile Include="WatchComponent.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -1,10 +1,12 @@
-﻿using ACL.UI.React;
+﻿using ACL.ES;
+using ACL.UI.React;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using VnodeTest.BC.Account;
 using VnodeTest.GameEntities;
 using static ACL.UI.React.DOM;
 
@@ -24,7 +26,8 @@ namespace VnodeTest
         private (Gameboard Board, (BasePiece start, int target) LastMove) SelectedPreviousMove;
         private bool Pause;
         public bool LoggedIn { get; set; }
-
+        public AggregateID<Account> AccountID { get; set; }
+        private bool ShowFriends;
         private readonly BC.Account.AccountProjection AccountProjection;
 
         public GameboardController(BC.Account.AccountProjection accountProjection)
@@ -44,14 +47,14 @@ namespace VnodeTest
         }
         //create logincontroller
         //create usercontroller add friend, see friend, play friend
-        private string Username;
-        private string Password;
 
         private VNode RenderGameModeSelection()
         {
             var gameroomDisplay = Gameroom == default ? "Random Room" : $"Room {Gameroom}";
-            return Div(
+            
 
+            return Div(
+              
 
 
                 Text("Player vs. AI Start", Styles.Btn & Styles.MP4, () => SelectGameMode(Gamemode.PvE)),

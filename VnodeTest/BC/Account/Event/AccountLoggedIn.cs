@@ -11,13 +11,11 @@ namespace VnodeTest.BC.Account.Event
     {
         public string Username { get; }
         public string Password { get; }
-        public GameboardController GameboardController { get; }
 
-        public AccountLoggedIn(AggregateID<Account> id, string username, string password, GameboardController gameboardController) : base(id)
+        public AccountLoggedIn(AggregateID<Account> id, string username, string password) : base(id)
         {
             Username = username;
             Password = password;
-            GameboardController = gameboardController;
         }
     }
 }

@@ -16,6 +16,7 @@ namespace VnodeTest.BC.Account
         private string Username;
         private string Password;
         private bool LoggedIn;
+        private List<AggregateID<Account>> Friends = new List<AggregateID<Account>>();
 
 
 
@@ -33,8 +34,10 @@ namespace VnodeTest.BC.Account
         {
             public static void RegisterAccount(AggregateID<Account> id, string username, string password) =>
                 MessageBus.Instance.Send(new RegisterAccount(id, username, password));
-            public static void LoginAccount(AggregateID<Account> id, string username, string password, GameboardController gameboardController) =>
-                MessageBus.Instance.Send(new LoginAccount(id, username, password, gameboardController));
+            public static void LoginAccount(AggregateID<Account> id, string username, string password) =>
+                MessageBus.Instance.Send(new LoginAccount(id, username, password));
+            public static void AddFriend(AggregateID<Account> id, AggregateID<Account> friendID) => MessageBus.Instance.Send(new AddFriend(id, friendID));
+            public static void DeleteFriend(AggregateID<Account> id, AggregateID<Account> friendID) => MessageBus.Instance.Send(new DeleteFriend(id, friendID));
         }
 
 
@@ -51,10 +54,22 @@ namespace VnodeTest.BC.Account
         {
             if (string.IsNullOrWhiteSpace(command.Password))
                 throw new Exception("password cannot be empty");
-           
-                yield return new AccountLoggedIn(command.ID, command.Username, command.Password, command.GameboardController);
-        }
 
+            yield return new AccountLoggedIn(command.ID, command.Username, command.Password);
+        }
+        public IEnumerable<IEvent> On(AddFriend command)
+        {
+            if (command.ID == null)
+                throw new Exception("Friends ID not valid");
+            yield return new FriendAdded(command.ID, command.FriendID);
+        }
+        public IEnumerable<IEvent> On(DeleteFriend command)
+        {
+            if (command.ID == null)
+                throw new Exception("Not Friends with this ID");
+            yield return new FriendDeleted(command.ID, command.FriendID);
+
+        }
 
 
         public override void Apply(IEvent @event)
@@ -68,7 +83,13 @@ namespace VnodeTest.BC.Account
                     Password = registered.Password;
                     break;
                 case AccountLoggedIn loggedin:
-                    loggedin.GameboardController.LoggedIn = true;
+                    LoggedIn = true; ;
+                    break;
+                case FriendAdded fadded:
+                    Friends.Add(fadded.FriendID);
+                    break;
+                case FriendDeleted fdeleted:
+                    Friends.Remove(fdeleted.ID);
                     break;
             }
         }

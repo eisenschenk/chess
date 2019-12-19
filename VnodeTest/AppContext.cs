@@ -42,6 +42,10 @@ namespace VnodeTest
 
         public LoginController CreateLoginController() =>
             new LoginController(AccountProjection);
-    }
 
+        public UserController CreateUserController(AccountEntry accountEntry) =>
+           new UserController(accountEntry, AccountProjection);
+    }
 }
+
+
