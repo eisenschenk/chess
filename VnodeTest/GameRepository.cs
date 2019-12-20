@@ -76,6 +76,7 @@ namespace VnodeTest
             PlayedByEngine = gamemode switch
             {
                 Gamemode.PvP => (false, false),
+                Gamemode.PvF => (false, false),
                 Gamemode.PvE => (false, true),
                 Gamemode.EvE => (true, true),
                 _ => throw new Exception("error game switch")

@@ -10,7 +10,6 @@ namespace VnodeTest.BC.Account.Event
     public class FriendAdded : AggregateEvent<Account>
     {
         public AggregateID<Account> FriendID { get; }
-        //private readonly AccountProjection AccountProjection;
         public FriendAdded(AggregateID<Account> id, AggregateID<Account> friendID) : base(id)
         {
             FriendID = friendID;

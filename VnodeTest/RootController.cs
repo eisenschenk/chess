@@ -34,7 +34,7 @@ namespace VnodeTest
 
         private GameboardController _GameboardController;
         private GameboardController GameboardController =>
-            _GameboardController ??= ((Application)Application.Instance).AppContext.CreateGameboardController();
+            _GameboardController ??= ((Application)Application.Instance).AppContext.CreateGameboardController(AccountEntry);
 
         private LoginController _LoginController;
         private LoginController LoginController =>

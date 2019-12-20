@@ -6,13 +6,16 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using VnodeTest.BC.Account;
+using VnodeTest.BC.Game;
 
 namespace VnodeTest
 {
     public class AppContext
     {
         private readonly AccountProjection AccountProjection;
+        private readonly GameProjection GameProjection;
         private readonly Account.Handler AccountHandler;
+        private readonly BC.Game.Game.Handler GameHandler;
 
         private readonly IRepository Repository;
 
@@ -35,16 +38,20 @@ namespace VnodeTest
             AccountProjection = new AccountProjection(store, bus);
             AccountProjection.Init();
             AccountHandler = new Account.Handler(Repository, bus);
+
+            GameProjection = new GameProjection(store, bus);
+            GameProjection.Init();
+            GameHandler = new BC.Game.Game.Handler(Repository, bus);
+
         }
 
-        public GameboardController CreateGameboardController() =>
-            new GameboardController(AccountProjection);
-
+        public GameboardController CreateGameboardController(AccountEntry accountEntry) =>
+            new GameboardController(AccountProjection, accountEntry, GameProjection);
         public LoginController CreateLoginController() =>
             new LoginController(AccountProjection);
 
         public UserController CreateUserController(AccountEntry accountEntry) =>
-           new UserController(accountEntry, AccountProjection);
+           new UserController(accountEntry, AccountProjection, GameProjection);
     }
 }
 

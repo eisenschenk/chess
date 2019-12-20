@@ -17,6 +17,17 @@ namespace VnodeTest
         }
 
         protected override VNode Render() => RootController.Render();
+
+        protected override void ResetSession()
+        {
+            base.ResetSession();
+        }
+
+        public override void Terminate()
+        {
+            base.Terminate();
+            BC.Account.Account.Commands.LogoutAccount(RootController.AccountEntry.ID);
+        }
     }
 
 }

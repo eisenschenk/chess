@@ -6,5 +6,5 @@ using System.Threading.Tasks;
 
 namespace VnodeTest.GameEntities
 {
-    public enum Gamemode { PvP, PvE, EvE }
+    public enum Gamemode { PvP, PvE, EvE, PvF }
 }

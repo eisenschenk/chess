@@ -35,8 +35,6 @@ namespace VnodeTest.BC.Account
         private void On(FriendAdded @event)
         {
             Dict[@event.ID].Friends.Add(@event.FriendID);
-            if (@event.FriendID != default)
-                Dict[@event.FriendID].Friends.Add(@event.ID);
         }
         private void On(FriendDeleted @event)
         {
@@ -44,6 +42,27 @@ namespace VnodeTest.BC.Account
             if (@event.FriendID != default)
                 Dict[@event.FriendID].Friends.Remove(@event.ID);
         }
+        private void On(FriendshipRequested @event)
+        {
+            Dict[@event.ID].PendingFriendRequests.Add(@event.FriendID);
+            Dict[@event.FriendID].ReceivedFriendRequests.Add(@event.ID);
+        }
+        private void On(FriendRequestAccepted @event)
+        {
+            Dict[@event.ID].ReceivedFriendRequests.Remove(@event.FriendID);
+            Dict[@event.FriendID].PendingFriendRequests.Remove(@event.ID);
+        }
+        private void On(FriendRequestDenied @event)
+        {
+            Dict[@event.ID].ReceivedFriendRequests.Remove(@event.FriendID);
+            Dict[@event.FriendID].PendingFriendRequests.Remove(@event.ID);
+        }
+        private void On(AccountLoggedOut @event)
+        {
+            Dict[@event.ID].LoggedIn = false;
+        }
+      
+
     }
 
     public class AccountEntry : ISearchable
@@ -54,6 +73,10 @@ namespace VnodeTest.BC.Account
         public DateTimeOffset CreatedAt { get; }
         public bool LoggedIn { get; set; }
         public List<AccountID> Friends { get; }
+        public List<AccountID> PendingFriendRequests { get; } = new List<AccountID>();
+        public List<AccountID> ReceivedFriendRequests { get; } = new List<AccountID>();
+        public List<AccountID> ReceivedChallenges { get; } = new List<AccountID>();
+        public List<AccountID> PendingChallenges { get; } = new List<AccountID>();
 
         public AccountEntry(AccountID id, string username, string password, DateTimeOffset createdAt, List<AccountID> friends)
         {

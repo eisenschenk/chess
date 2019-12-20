@@ -25,14 +25,16 @@ namespace VnodeTest
         private BasePiece[] PromotionSelect = new BasePiece[4];
         private (Gameboard Board, (BasePiece start, int target) LastMove) SelectedPreviousMove;
         private bool Pause;
-        public bool LoggedIn { get; set; }
-        public AggregateID<Account> AccountID { get; set; }
-        private bool ShowFriends;
         private readonly BC.Account.AccountProjection AccountProjection;
-
-        public GameboardController(BC.Account.AccountProjection accountProjection)
+        private readonly BC.Game.GameProjection GameProjection;
+        private Gamemode Gamemode;// = Gamemode.PvF;
+        private AccountEntry AccountEntry;
+        private AggregateID<BC.Game.Game> GameID;
+        public GameboardController(AccountProjection accountProjection, AccountEntry accountEntry, BC.Game.GameProjection gameProjection)
         {
             AccountProjection = accountProjection;
+            AccountEntry = accountEntry;
+            GameProjection = gameProjection;
             ThreadPool.QueueUserWorkItem(o =>
             {
                 while (true)
@@ -51,14 +53,15 @@ namespace VnodeTest
         private VNode RenderGameModeSelection()
         {
             var gameroomDisplay = Gameroom == default ? "Random Room" : $"Room {Gameroom}";
-            
+
 
             return Div(
-              
+
 
 
                 Text("Player vs. AI Start", Styles.Btn & Styles.MP4, () => SelectGameMode(Gamemode.PvE)),
                 Text("AI vs. AI Start", Styles.MP4 & Styles.Btn, () => SelectGameMode(Gamemode.EvE)),
+                Text("Play vs. Friend", Styles.MP4 & Styles.Btn, () => Gamemode = Gamemode.PvF),
                 Row(
                     Text($"Player vs. Player Start/Enter {gameroomDisplay}", Styles.MP4 & Styles.Btn, () => SelectGameMode(Gamemode.PvP, Gameroom.ToString())),
                     Input(Gameroom, i => Gameroom = i, Styles.MP4, " Select Gameroom Nr.")
@@ -151,12 +154,48 @@ namespace VnodeTest
 
         private VNode RenderGameBoard()
         {
+            var challenges = GameProjection.Games.Where(x => x.Challenged == AccountEntry.ID);
+            if (challenges.Any())
+                return RenderChallenges(challenges);
+            if (Gamemode == Gamemode.PvF)
+                return FriendSelect();
             if (Gameboard == default)
                 return RenderGameModeSelection();
             if (Game.IsPromotable && PlayerColor != Game.CurrentPlayerColor)
                 return RenderPromotionSelection();
             return RenderBoard();
 
+        }
+
+        private VNode RenderChallenges(IEnumerable<BC.Game.GameEntry> challenges)
+        {
+            return Div(
+                Fragment(challenges.Select(c =>
+                      Row(
+                          Text(AccountProjection[c.Challenger].Username),
+                          Text("Accept", Styles.Btn & Styles.MP4, () => BC.Game.Game.Commands.AcceptChallenge(c.ID, c.Challenger, c.Challenged)),
+                          Text("Deny", Styles.Btn & Styles.MP4)
+                      )
+                )));
+        }
+
+        private VNode FriendSelect()
+        {
+            if (GameID == default)
+            {
+                GameID = AggregateID<BC.Game.Game>.Create();
+                int key = 999;
+                while (GameRepository.Instance.Keys.Contains(key))
+                    key++;
+                BC.Game.Game.Commands.OpenGame(GameID, Gamemode.PvF, key);
+            }
+            var friends = AccountProjection.Accounts.Where(a => AccountEntry.Friends.Contains(a.ID));
+            return Div(
+                Fragment(friends.Select(f =>
+                Row(
+                    Text(f.Username),
+                    Text("Challenge", Styles.Btn & Styles.MP4, () => BC.Game.Game.Commands.RequestChallenge(GameID, AccountEntry.ID, f.ID)))))
+            );
         }
 
         private VNode GetBoardVNode(Gameboard gameboard, (BasePiece start, int target) lastmove)

@@ -5,16 +5,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace VnodeTest.BC.Account.Command
+namespace VnodeTest.BC.Account.Event
 {
-    public class AddFriend : AggregateCommand<Account>
+    public class FriendRequestDenied : AggregateEvent<Account>
     {
         public AggregateID<Account> FriendID { get; }
-
-        public AddFriend(AggregateID<Account> id, AggregateID<Account> friendID) : base(id)
+        public FriendRequestDenied(AggregateID<Account> id, AggregateID<Account> friendID) : base(id)
         {
             FriendID = friendID;
         }
-
     }
 }
+

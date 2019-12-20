@@ -22,16 +22,37 @@ namespace VnodeTest.BC.Game
             {
             }
         }
-
+        // aggregate rooot nur mit ID vom selben Typ aufrufen
         public static class Commands
         {
             public static void OpenGame(AggregateID<Game> id, Gamemode gamemode, int repositoryID) =>
                 MessageBus.Instance.Send(new OpenGame(id, gamemode, repositoryID));
+            public static void RequestChallenge(AggregateID<Game> id, AggregateID<Account.Account> accountID, AggregateID<Account.Account> friendID) =>
+                MessageBus.Instance.Send(new RequestChallenge(id, accountID, friendID));
+            public static void DenyChallenge(AggregateID<Game> id, AggregateID<Account.Account> accountID, AggregateID<Account.Account> friendID) =>
+                MessageBus.Instance.Send(new DenyChallenge(id, accountID, friendID));
+            public static void AcceptChallenge(AggregateID<Game> id, AggregateID<Account.Account> accountID, AggregateID<Account.Account> friendID) =>
+              MessageBus.Instance.Send(new AcceptChallenge(id, accountID, friendID));
         }
-
+        //hier kann man 2 oder mehr events starten
         public IEnumerable<IEvent> On(OpenGame command)
         {
             yield return new GameOpened(command.ID, command.Gamemode, command.RepositoryID);
+        }
+        public IEnumerable<IEvent> On(RequestChallenge command)
+        {
+
+            yield return new ChallengeRequested(command.ID, command.AccountID, command.FriendID);
+        }
+        public IEnumerable<IEvent> On(AcceptChallenge command)
+        {
+           
+            
+            yield return new ChallengeAccepted(command.ID, command.AccountID, command.FriendID);
+        }
+        public IEnumerable<IEvent> On(DenyChallenge command)
+        {
+            yield return new ChallengeDenied(command.ID, command.AccountID, command.FriendID);
         }
 
         public override void Apply(IEvent @event)

@@ -15,6 +15,7 @@ namespace VnodeTest.BC.Game
     public class GameProjection : Projection
     {
         private readonly Dictionary<GameID, GameEntry> Dict = new Dictionary<GameID, GameEntry>();
+        //private readonly Dictionary<AggregateID<Account.Account>, Account.AccountEntry> Accounts = new Dictionary<AggregateID<Account.Account>, Account.AccountEntry>();
 
         public GameEntry this[GameID id] => Dict[id];
         public IEnumerable<GameEntry> Games => Dict.Values;
@@ -26,7 +27,21 @@ namespace VnodeTest.BC.Game
 
         private void On(GameOpened @event)
         {
-            Dict.Add(@event.ID, new GameEntry(@event.ID, @event.Gamemode));
+            GameRepository.Instance.AddGame(@event.RepositoryID, @event.Gamemode, new Gameboard());
+            Dict.Add(@event.ID, new GameEntry(@event.ID, @event.RepositoryID, @event.Gamemode));
+        }
+        private void On(ChallengeRequested @event)
+        {
+            Dict[@event.ID].Challenger = @event.AccountID;
+            Dict[@event.ID].Challenged = @event.FriendID;
+        }
+        private void On(ChallengeAccepted @event)
+        {
+        }
+        private void On(ChallengeDenied @event)
+        {
+            Dict[@event.ID].Challenger = default;
+            Dict[@event.ID].Challenged = default;
         }
     }
 
@@ -36,9 +51,13 @@ namespace VnodeTest.BC.Game
         public int RepositoryID { get; }
         public Gamemode Gamemode { get; }
         public bool LoggedIn;
-        public GameEntry(GameID id, Gamemode gamemode)
+        public AggregateID<Account.Account> Challenger { get; set; }
+        public AggregateID<Account.Account> Challenged { get; set; }
+
+        public GameEntry(GameID id, int repositoryID, Gamemode gamemode)
         {
             ID = id;
+            RepositoryID = repositoryID;
             Gamemode = gamemode;
         }
     }
