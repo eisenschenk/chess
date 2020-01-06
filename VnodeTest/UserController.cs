@@ -85,7 +85,7 @@ namespace VnodeTest
         private VNode RenderDeleteFriend(IEnumerable<AccountEntry> friends)
         {
             return Div(
-                 SearchbarComponent<AccountEntry>.Render(friends, a => Account.Commands.DeleteFriend(AccountEntry.ID, a.ID)),
+                 SearchbarComponent<AccountEntry>.Render(friends, a => Account.Commands.AbortFriend(AccountEntry.ID, a.ID)),
                  Text("back", Styles.Btn & Styles.MP4, () => Rendermode = RenderMode.Overview)
             );
         }

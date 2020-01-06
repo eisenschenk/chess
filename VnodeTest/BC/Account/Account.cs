@@ -38,10 +38,11 @@ namespace VnodeTest.BC.Account
                 MessageBus.Instance.Send(new RegisterAccount(id, username, password));
             public static void LoginAccount(AggregateID<Account> id, string username, string password) =>
                 MessageBus.Instance.Send(new LoginAccount(id, username, password));
+            public static void AcceptFriendRequest(AggregateID<Account> id, AggregateID<Account> friendID) => PM.AddFriendPM.PMAddFriend(id, friendID);
             public static void AddFriend(AggregateID<Account> id, AggregateID<Account> friendID) => MessageBus.Instance.Send(new AddFriend(id, friendID));
+            public static void AbortFriend(AggregateID<Account> id, AggregateID<Account> friendID) => PM.DeleteFriendPM.PMDeleteFriend(id, friendID);
             public static void DeleteFriend(AggregateID<Account> id, AggregateID<Account> friendID) => MessageBus.Instance.Send(new DeleteFriend(id, friendID));
             public static void RequestFriend(AggregateID<Account> id, AggregateID<Account> friendID) => MessageBus.Instance.Send(new RequestFriendship(id, friendID));
-            public static void AcceptFriendRequest(AggregateID<Account> id, AggregateID<Account> friendID) => PM.AddFriendPM.PMAddFriend(id, friendID);
             public static void DenyFriendRequest(AggregateID<Account> id, AggregateID<Account> friendID) => MessageBus.Instance.Send(new DenyFriendRequest(id, friendID));
             public static void LogoutAccount(AggregateID<Account> id) => MessageBus.Instance.Send(new LogoutAccount(id));
             
@@ -76,7 +77,10 @@ namespace VnodeTest.BC.Account
             if (command.ID == default)
                 throw new Exception("Not Friends with this ID");
             yield return new FriendDeleted(command.ID, command.FriendID);
-
+        }
+        public IEnumerable<IEvent> On(AbortFriendship command)
+        {
+            yield return new FriendshipAborted(command.ID, command.FriendID);
         }
         public IEnumerable<IEvent> On(RequestFriendship command)
         {
@@ -94,7 +98,7 @@ namespace VnodeTest.BC.Account
         {
             yield return new AccountLoggedOut(command.ID);
         }
-       
+              
         public override void Apply(IEvent @event)
         {
             switch (@event)
@@ -112,7 +116,7 @@ namespace VnodeTest.BC.Account
                     Friends.Add(fadded.FriendID);
                     break;
                 case FriendDeleted fdeleted:
-                    Friends.Remove(fdeleted.ID);
+                    Friends.Remove(fdeleted.FriendID);
                     break;
                 case FriendshipRequested frequested:
                    

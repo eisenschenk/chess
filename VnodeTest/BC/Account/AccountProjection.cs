@@ -32,25 +32,27 @@ namespace VnodeTest.BC.Account
         {
             Dict[@event.ID].LoggedIn = true;
         }
+        private void On(FriendRequestAccepted @event)
+        {
+            Dict[@event.ID].ReceivedFriendRequests.Remove(@event.FriendID);
+            Dict[@event.FriendID].PendingFriendRequests.Remove(@event.ID);
+        }
         private void On(FriendAdded @event)
         {
             Dict[@event.ID].Friends.Add(@event.FriendID);
         }
+        private void On(FriendshipAborted @event)
+        {
+            //muss hier zwingend was hin? @p
+        }
         private void On(FriendDeleted @event)
         {
             Dict[@event.ID].Friends.Remove(@event.FriendID);
-            if (@event.FriendID != default)
-                Dict[@event.FriendID].Friends.Remove(@event.ID);
         }
         private void On(FriendshipRequested @event)
         {
             Dict[@event.ID].PendingFriendRequests.Add(@event.FriendID);
             Dict[@event.FriendID].ReceivedFriendRequests.Add(@event.ID);
-        }
-        private void On(FriendRequestAccepted @event)
-        {
-            Dict[@event.ID].ReceivedFriendRequests.Remove(@event.FriendID);
-            Dict[@event.FriendID].PendingFriendRequests.Remove(@event.ID);
         }
         private void On(FriendRequestDenied @event)
         {
@@ -61,7 +63,7 @@ namespace VnodeTest.BC.Account
         {
             Dict[@event.ID].LoggedIn = false;
         }
-      
+
 
     }
 
