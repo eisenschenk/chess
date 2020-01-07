@@ -60,23 +60,23 @@
     <Compile Include="Application.cs" />
     <Compile Include="BC\Account\Account.cs" />
     <Compile Include="BC\Account\AccountProjection.cs" />
-    <Compile Include="BC\Account\Command\AbortFriendship.cs" />
-    <Compile Include="BC\Account\Event\FriendshipAborted.cs" />
+    <Compile Include="BC\Friendship\Command\AbortFriendship.cs" />
+    <Compile Include="BC\Friendship\Event\FriendshipAborted.cs" />
     <Compile Include="BC\Friendship\Friendship.cs" />
     <Compile Include="BC\Friendship\FriendshipProjection.cs" />
     <Compile Include="BC\Game\Command\AcceptChallenge.cs" />
-    <Compile Include="BC\Account\Command\AcceptFriendRequest.cs" />
-    <Compile Include="BC\Account\Command\AddFriend.cs" />
-    <Compile Include="BC\Account\Command\DeleteFriend.cs" />
+    <Compile Include="BC\Friendship\Command\AcceptFriendRequest.cs" />
+    <Compile Include="BC\Friendship\Command\AddFriend.cs" />
+    <Compile Include="BC\Friendship\Command\DeleteFriend.cs" />
     <Compile Include="BC\Game\Command\CloseGame.cs" />
     <Compile Include="BC\Game\Command\DenyChallenge.cs" />
-    <Compile Include="BC\Account\Command\DenyFriendRequest.cs" />
+    <Compile Include="BC\Friendship\Command\DenyFriendRequest.cs" />
     <Compile Include="BC\Account\Command\LoginAccount.cs" />
     <Compile Include="BC\Account\Command\LogoutAccount.cs" />
     <Compile Include="BC\Account\Command\RegisterAccount.cs" />
     <Compile Include="BC\Game\Command\JoinGame.cs" />
     <Compile Include="BC\Game\Command\RequestChallenge.cs" />
-    <Compile Include="BC\Account\Command\RequestFriendship.cs" />
+    <Compile Include="BC\Friendship\Command\RequestFriendship.cs" />
     <Compile Include="BC\Account\Event\AccountLoggedIn.cs" />
     <Compile Include="BC\Account\Event\AccountLoggedOut.cs" />
     <Compile Include="BC\Account\Event\AccountRegistered.cs" />
@@ -85,11 +85,11 @@
     <Compile Include="BC\Game\Event\ChallengeAccepted.cs" />
     <Compile Include="BC\Game\Event\ChallengeDenied.cs" />
     <Compile Include="BC\Game\Event\ChallengeRequested.cs" />
-    <Compile Include="BC\Account\Event\FriendAdded.cs" />
-    <Compile Include="BC\Account\Event\FriendDeleted.cs" />
-    <Compile Include="BC\Account\Event\FriendRequestAccepted.cs" />
-    <Compile Include="BC\Account\Event\FriendRequestDenied.cs" />
-    <Compile Include="BC\Account\Event\FriendshipRequested.cs" />
+    <Compile Include="BC\Friendship\Event\FriendAdded.cs" />
+    <Compile Include="BC\Friendship\Event\FriendDeleted.cs" />
+    <Compile Include="BC\Friendship\Event\FriendRequestAccepted.cs" />
+    <Compile Include="BC\Friendship\Event\FriendRequestDenied.cs" />
+    <Compile Include="BC\Friendship\Event\FriendshipRequested.cs" />
     <Compile Include="BC\AggregateEvent.cs" />
     <Compile Include="BC\Game\Command\OpenGame.cs" />
     <Compile Include="BC\Game\Event\GameClosed.cs" />
@@ -100,6 +100,7 @@
     <Compile Include="BC\Game\Game.cs" />
     <Compile Include="BC\Game\GameProjection.cs" />
     <Compile Include="ColorThemeComponent.cs" />
+    <Compile Include="FriendshipController.cs" />
     <Compile Include="GameboardController.cs" />
     <Compile Include="GameEntities\BasePiece.cs" />
     <Compile Include="GameEntities\Bishop.cs" />
@@ -138,9 +139,6 @@
       <Name>ACL.ES</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="BC\Friendship\Command\" />
-    <Folder Include="BC\Friendship\Event\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

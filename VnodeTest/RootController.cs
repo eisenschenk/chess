@@ -18,7 +18,8 @@ namespace VnodeTest
         {
             return Div(
                 Text("Account", Styles.Btn & Styles.MP4, () => CurrentContent = UserController.Render),
-                Text("Play Game", Styles.Btn & Styles.MP4, () => CurrentContent = GameboardController.Render)
+                Text("Play Game", Styles.Btn & Styles.MP4, () => CurrentContent = GameboardController.Render),
+                Text("Friends", Styles.Btn & Styles.MP4, () => CurrentContent = FriendshipController.Render)
             );
         }
 
@@ -43,6 +44,10 @@ namespace VnodeTest
         private UserController _UserController;
         private UserController UserController =>
             _UserController ??= ((Application)Application.Instance).AppContext.CreateUserController(AccountEntry);
+
+        private FriendshipController _FriendshipController;
+        private FriendshipController FriendshipController =>
+            _FriendshipController ??= ((Application)Application.Instance).AppContext.CreateFriendshipController(AccountEntry);
     }
 }
 

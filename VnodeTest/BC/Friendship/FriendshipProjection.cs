@@ -8,6 +8,7 @@ using FriendshipID = ACL.ES.AggregateID<VnodeTest.BC.Friendship.Friendship>;
 using static ACL.UI.React.DOM;
 using ACL.UI.React;
 using ACL.MQ;
+using VnodeTest.BC.Friendship.Event;
 
 namespace VnodeTest.BC.Friendship
 {
@@ -23,11 +24,32 @@ namespace VnodeTest.BC.Friendship
         {
         }
 
-        //private void On(AccountRegistered @event)
+        private void On(FriendRequestAccepted @event)
+        {
+            Dict[@event.ID].Accepted = true;
+        }
+        //private void On(FriendAdded @event)
         //{
-        //    Dict.Add(@event.ID, new AccountEntry(@event.ID, @event.Username, @event.Password, @event.Timestamp, new List<AccountID>()));
+        //    Dict[@event.ID].Friends.Add(@event.FriendID);
         //}
-       
+        private void On(FriendshipAborted @event)
+        {
+            Dict[@event.ID] = default;
+        }
+        //private void On(FriendDeleted @event)
+        //{
+        //    Dict[@event.ID].Friends.Remove(@event.FriendID);
+        //}
+        private void On(FriendshipRequested @event)
+        {
+            Dict[@event.ID].Requested = true;
+        }
+        private void On(FriendRequestDenied @event)
+        {
+            Dict[@event.ID].Accepted = false;
+            Dict[@event.ID].Requested = false;
+        }
+
 
     }
 
@@ -36,10 +58,11 @@ namespace VnodeTest.BC.Friendship
         public FriendshipID ID { get; }
         public AggregateID<Account.Account> FriendAID;
         public AggregateID<Account.Account> FriendBID;
-       
-        //public List<AccountID> PendingFriendRequests { get; } = new List<AccountID>();
-        //public List<AccountID> ReceivedFriendRequests { get; } = new List<AccountID>();
-       
+        public bool Accepted;
+        public bool Requested;
+        //public List<Account.Account> PendingFriendRequests { get; } = new List<Account.Account>();
+        //public List<Account.Account> ReceivedFriendRequests { get; } = new List<Account.Account>();
+
 
         public FriendshipEntry(FriendshipID id, AggregateID<Account.Account> friendA, AggregateID<Account.Account> friendB)
         {

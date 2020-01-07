@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using VnodeTest.BC.Account;
 using VnodeTest.BC.Game;
+using VnodeTest.BC.Friendship;
 
 namespace VnodeTest
 {
@@ -14,8 +15,10 @@ namespace VnodeTest
     {
         private readonly AccountProjection AccountProjection;
         private readonly GameProjection GameProjection;
+        private readonly FriendshipProjection FriendshipProjection;
         private readonly Account.Handler AccountHandler;
         private readonly BC.Game.Game.Handler GameHandler;
+        private readonly Friendship.Handler FriendshipHandler;
 
         private readonly IRepository Repository;
 
@@ -43,16 +46,22 @@ namespace VnodeTest
             GameProjection.Init();
             GameHandler = new BC.Game.Game.Handler(Repository, bus);
 
+            FriendshipProjection = new FriendshipProjection(store, bus);
+            FriendshipProjection.Init();
+            FriendshipHandler = new Friendship.Handler(Repository, bus);
+
         }
 
         public GameboardController CreateGameboardController(AccountEntry accountEntry) =>
             new GameboardController(AccountProjection, accountEntry, GameProjection);
         public LoginController CreateLoginController() =>
             new LoginController(AccountProjection);
-
         public UserController CreateUserController(AccountEntry accountEntry) =>
-           new UserController(accountEntry, AccountProjection, GameProjection);
+           new UserController(accountEntry, AccountProjection, GameProjection, FriendshipProjection);
+        public FriendshipController CreateFriendshipController(AccountEntry accountEntry) =>
+          new FriendshipController(accountEntry, AccountProjection, GameProjection, FriendshipProjection);
     }
 }
+
 
 

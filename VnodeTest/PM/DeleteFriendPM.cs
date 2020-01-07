@@ -11,11 +11,11 @@ namespace VnodeTest.PM
 {
     class DeleteFriendPM
     {
-        public static void PMDeleteFriend(AggregateID<Account> id, AggregateID<Account> friendID)
-        {
-            MessageBus.Instance.Send(new BC.Account.Command.AbortFriendship(id, friendID));
-            Account.Commands.DeleteFriend(id, friendID);
-            Account.Commands.DeleteFriend(friendID, id);
-        }
+        //public static void PMDeleteFriend(AggregateID<Account> id, AggregateID<Account> friendID)
+        //{
+        //    MessageBus.Instance.Send(new BC.Account.Command.AbortFriendship(id, friendID));
+        //    Account.Commands.DeleteFriend(id, friendID);
+        //    Account.Commands.DeleteFriend(friendID, id);
+        //}
     }
 }
