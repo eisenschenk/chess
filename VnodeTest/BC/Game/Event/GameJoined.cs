@@ -4,18 +4,16 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ACL.ES;
+using VnodeTest.BC.Account;
 
 namespace VnodeTest.BC.Game.Event
 {
-    public class ChallengeAccepted : AggregateEvent<Game>
+    public class GameJoined : AggregateEvent<Game>
     {
         public AggregateID<Account.Account> AccountID { get; }
-        public AggregateID<Account.Account> FriendID { get; }
-
-        public ChallengeAccepted(AggregateID<Game> id, AggregateID<Account.Account> accountID, AggregateID<Account.Account> friendID) : base(id)
+        public GameJoined(AggregateID<Game> id, AggregateID<Account.Account> accountID) : base(id)
         {
             AccountID = accountID;
-            FriendID = friendID;
         }
 
     }

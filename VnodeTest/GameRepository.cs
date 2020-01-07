@@ -1,5 +1,7 @@
-﻿using System;
+﻿using ACL.ES;
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -25,28 +27,28 @@ namespace VnodeTest
 
         private GameRepository() { }
 
-        private readonly Dictionary<int, Game> Store = new Dictionary<int, Game>();
+        private readonly Dictionary<AggregateID<BC.Game.Game>, Game> Store = new Dictionary<AggregateID<BC.Game.Game>, Game>();
 
-        public IEnumerable<int> Keys => Store.Keys;
+        public IEnumerable<AggregateID<BC.Game.Game>> Keys => Store.Keys;
 
-        public Game AddGame(int key, Gamemode mode, Gameboard board)
+        public Game AddGame(AggregateID<BC.Game.Game> key, Gamemode mode, Gameboard board)
         {
             var game = new Game(key, mode, board, TimeSpan.FromSeconds(30000000));
             Store[key] = game;
             return game;
         }
 
-
-        public bool TryGetGame(int key, out Game game) => Store.TryGetValue(key, out game);
+        public bool TryGetGame(AggregateID<BC.Game.Game> key, out Game game) => Store.TryGetValue(key, out game);
     }
     public class Game
     {
-        public int ID { get; }
+        public AggregateID<BC.Game.Game> ID { get; }
         public Gamemode Gamemode { get; }
         public bool HasBlackPlayer { get; set; }
 
         public bool HasWhitePlayer { get; set; }
         public bool HasOpenSpots => !HasBlackPlayer || !HasWhitePlayer;
+        public bool IsEmpty => !HasBlackPlayer && !HasWhitePlayer;
         public Gameboard Gameboard { get; private set; }
         public (bool W, bool B) PlayedByEngine { get; set; }
         public bool IsPromotable { get; set; }
@@ -63,16 +65,22 @@ namespace VnodeTest
         public TimeSpan BlackClock { get => _BlackClock; private set => _BlackClock = value; }
         private DateTime LastClockUpdate;
         public readonly List<(Gameboard Board, (BasePiece start, int target) LastMove)> Moves = new List<(Gameboard Board, (BasePiece start, int target) LastMove)>();
+        public double Timer = 60;
+        private DateTime Gamestart;
+        public TimeSpan Elapsed => DateTime.Now - Gamestart;
 
-        public Game(int id, Gamemode gamemode, Gameboard gameboard, TimeSpan playerClockTime)
+
+
+        public Game(AggregateID<BC.Game.Game> id, Gamemode gamemode, Gameboard gameboard, TimeSpan playerClockTime)
         {
             ID = id;
             Gamemode = gamemode;
             Gameboard = gameboard;
-            Moves.Add((gameboard,(null,0)));
+            Moves.Add((gameboard, (null, 0)));
             LastClockUpdate = DateTime.Now;
             WhiteClock = playerClockTime;
             BlackClock = playerClockTime;
+            Gamestart = DateTime.Now;
             PlayedByEngine = gamemode switch
             {
                 Gamemode.PvP => (false, false),
@@ -91,7 +99,7 @@ namespace VnodeTest
             var targetY = Gameboard.ParseStringYToInt(input[3].ToString());
             return (startX + startY * 8, targetX + targetY * 8);
         }
-       
+
         //TODO naming
         public void TryEngineMove(string engineMove, (bool, bool) engineControlled = default)
         {
@@ -227,7 +235,7 @@ namespace VnodeTest
                 Winner = PieceColor.Zero;
                 return true;
             }
-            return Gameboard.CheckMateDetection(Gameboard, CurrentPlayerColor);           
+            return Gameboard.CheckMateDetection(Gameboard, CurrentPlayerColor);
         }
 
         public PieceColor InverseColor()

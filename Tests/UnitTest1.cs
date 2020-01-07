@@ -2,12 +2,16 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VnodeTest.GameEntities;
 using VnodeTest;
+using VnodeTest.BC;
+using ACL.ES;
 
 namespace Tests
 {
     [TestClass]
     public class WholeGame
     {
+        public object AggregateID { get; private set; }
+
         [DataTestMethod]
         [DataRow("e4.d5.exd5.Qxd5.Nc3.Qa5.d4.Nf6.Nf3.c6.Bc4.Bf5.Ne5.e6.g4.Bg6.h4.Nbd7.Nxd7.Nxd7.h5.Be4.Rh3.Bg2.Re3.Nb6.Bd3.Nd5.f3.Bb4.Kf2.Bxc3.bxc3.Qxc3.Rb1.Qxd4.Rxb7.Rd8.h6.gxh6.Bg6.Ne7.Qxd4.Rxd4.Rd3.Rd8.Rxd8+.Kxd8.Bd3.1-0", DisplayName = "https://www.chessgames.com/perl/chessgame?gid=1018785")]
         [DataRow("e4.c5.Nf3.Nc6.d4.cxd4.Nxd4.Nf6.Nc3.d6.Bg5.e6.Qd2.a6.O-O-O.h6.Be3.Be7.f4.Nxd4.Bxd4.b5.Qe3.Qc7.e5.dxe5.Bxe5.Ng4.Qf3.Nxe5.Qxa8.Nd7.g3.Nb6.Qf3.Bb7.Ne4.f5.Qh5+.Kf8.Nf2.Bf6.Bd3.Na4.Rhe1.Bxb2+.Kb1.Bd5.Bxb5.Bxa2+.Kxa2.axb5.Kb1.Qa5.Nd3.Ba3.Ka2.Nc3+.Kb3.Nd5.Ka2.Bb4+.Kb1.Bc3.0-1", DisplayName = "https://www.chessgames.com/perl/chessgame?gid=1060694")]
@@ -36,7 +40,8 @@ namespace Tests
         {
             var moves = moveSource.Split('.');
             var gameboard = new Gameboard();
-            var game = new Game(0, Gamemode.PvP, new Gameboard(), TimeSpan.FromDays(10));
+            AggregateID<VnodeTest.BC.Game.Game> id = AggregateID<VnodeTest.BC.Game.Game>.Create();
+            var game = new Game(id, Gamemode.PvP, new Gameboard(), TimeSpan.FromDays(10));
             foreach (string move in moves)
                 gameboard.TryAlgebraicNotaionToMyNotaion(move, game);
         }

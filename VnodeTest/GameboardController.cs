@@ -2,6 +2,7 @@
 using ACL.UI.React;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -14,7 +15,7 @@ namespace VnodeTest
 {
     public class GameboardController
     {
-        private Game Game;
+        public Game Game;
         private Gameboard Gameboard => Game != null ? Game.Gameboard : null;
         private int Gameroom;
         private VNode RefreshReference;
@@ -28,6 +29,7 @@ namespace VnodeTest
         private readonly BC.Account.AccountProjection AccountProjection;
         private readonly BC.Game.GameProjection GameProjection;
         private Gamemode Gamemode;// = Gamemode.PvF;
+        public Rendermode RenderMode;
         private AccountEntry AccountEntry;
         private AggregateID<BC.Game.Game> GameID;
         public GameboardController(AccountProjection accountProjection, AccountEntry accountEntry, BC.Game.GameProjection gameProjection)
@@ -47,8 +49,6 @@ namespace VnodeTest
                 }
             });
         }
-        //create logincontroller
-        //create usercontroller add friend, see friend, play friend
 
         private VNode RenderGameModeSelection()
         {
@@ -56,61 +56,21 @@ namespace VnodeTest
 
 
             return Div(
-
-
-
                 Text("Player vs. AI Start", Styles.Btn & Styles.MP4, () => SelectGameMode(Gamemode.PvE)),
                 Text("AI vs. AI Start", Styles.MP4 & Styles.Btn, () => SelectGameMode(Gamemode.EvE)),
-                Text("Play vs. Friend", Styles.MP4 & Styles.Btn, () => Gamemode = Gamemode.PvF),
-                Row(
-                    Text($"Player vs. Player Start/Enter {gameroomDisplay}", Styles.MP4 & Styles.Btn, () => SelectGameMode(Gamemode.PvP, Gameroom.ToString())),
-                    Input(Gameroom, i => Gameroom = i, Styles.MP4, " Select Gameroom Nr.")
-                ),
-                GameRepository.Instance.Keys.Any()
-                ? Div(
-                    Text("Open Games: "),
-                    Fragment(GameRepository.Instance.Keys.Select(key => Text(key.ToString())))
-                )
-                : null
+                Text("Play vs. Friend", Styles.MP4 & Styles.Btn, () => RenderMode = Rendermode.PlayFriend)
             );
         }
 
-        private Game GetFittingGame(Gamemode gamemode, string _key)
-        {
-            Game game;
-            int key = int.Parse(_key);
-            while (GameRepository.Instance.TryGetGame(key, out game))
-            {
-                if ((gamemode == Gamemode.PvP && !game.HasOpenSpots)
-                     || ((gamemode == Gamemode.EvE || gamemode == Gamemode.PvE) && !game.HasOpenSpots))
-                    key++;
-                else
-                    break;
-            }
-            if (game == default)
-                game = GameRepository.Instance.AddGame(key, gamemode, new Gameboard());
-
-            return game;
-        }
         private void SelectGameMode(Gamemode gamemode, string index = "0")
         {
-            Game = GetFittingGame(gamemode, index);
-            //PvP
-            if (gamemode == Gamemode.PvP)
-            {
-                if (!Game.HasWhitePlayer)
-                {
-                    PlayerColor = PieceColor.White;
-                    Game.HasWhitePlayer = true;
-                }
-                else
-                {
-                    PlayerColor = PieceColor.Black;
-                    Game.HasBlackPlayer = true;
-                }
-            }
+            GameID = AggregateID<BC.Game.Game>.Create();
+            BC.Game.Game.Commands.OpenGame(GameID, gamemode);
+            GameRepository.Instance.TryGetGame(GameID, out Game);
+            BC.Game.Game.Commands.JoinGame(GameID, AccountEntry.ID);
+
             //EvE && PvE
-            else if (gamemode == Gamemode.EvE || gamemode == Gamemode.PvE)
+            if (gamemode == Gamemode.EvE || gamemode == Gamemode.PvE)
             {
                 Engine = new EngineControl();
                 Game.HasWhitePlayer = true;
@@ -152,19 +112,59 @@ namespace VnodeTest
             return RefreshReference = RenderGameBoard();
         }
 
+        public enum Rendermode
+        {
+            Gameboard,
+            PlayFriend,
+            ChallengeDenied,
+            WaitingForChallenged
+        }
+
         private VNode RenderGameBoard()
         {
             var challenges = GameProjection.Games.Where(x => x.Challenged == AccountEntry.ID);
-            if (challenges.Any())
+            if (challenges.Any() && Game == default)
                 return RenderChallenges(challenges);
-            if (Gamemode == Gamemode.PvF)
-                return FriendSelect();
+            if (RenderMode == Rendermode.PlayFriend)
+                return FriendChallenge();
             if (Gameboard == default)
                 return RenderGameModeSelection();
             if (Game.IsPromotable && PlayerColor != Game.CurrentPlayerColor)
                 return RenderPromotionSelection();
+            if (RenderMode == Rendermode.WaitingForChallenged)
+                return RenderWaitingRoom();
+            if (RenderMode == Rendermode.ChallengeDenied)
+                return RenderChallengeDenied();
             return RenderBoard();
 
+        }
+
+        private VNode RenderWaitingRoom()
+        {
+            var challenges = GameProjection.Games.Where(x => x.Challenger == AccountEntry.ID);
+            var game = GameProjection.Games.Where(x => x.PlayerWhite == AccountEntry.ID).FirstOrDefault();
+            if (game != default)
+            {
+                GameRepository.Instance.TryGetGame(game.ID, out Game);
+                PlayerColor = PieceColor.White;
+                Game.HasWhitePlayer = true;
+                RenderMode = Rendermode.Gameboard;
+            }
+            return Div(
+                Fragment(challenges.Select(c =>
+                    Div(
+                        Game.HasOpenSpots && Game.Timer - Game.Elapsed.Seconds >= 0 ? Text($"Waiting for Friend: {Game.Timer - Game.Elapsed.Seconds}") : null,
+                        Text("Abort Challenge!", Styles.AbortBtn & Styles.MP4, () => BC.Game.Game.Commands.DenyChallenge(c.ID, c.Challenger, c.Challenged))
+                    )
+                )),
+                Text("back", Styles.Btn & Styles.MP4, () => { Game = null; RenderMode = Rendermode.Gameboard; })
+            );
+
+        }
+
+        private VNode RenderChallengeDenied()
+        {
+            return Text("Challenge denied!", Styles.AbortBtn & Styles.MP4, () => RenderMode = Rendermode.Gameboard);
         }
 
         private VNode RenderChallenges(IEnumerable<BC.Game.GameEntry> challenges)
@@ -173,30 +173,47 @@ namespace VnodeTest
                 Fragment(challenges.Select(c =>
                       Row(
                           Text(AccountProjection[c.Challenger].Username),
-                          Text("Accept", Styles.Btn & Styles.MP4, () => BC.Game.Game.Commands.AcceptChallenge(c.ID, c.Challenger, c.Challenged)),
-                          Text("Deny", Styles.Btn & Styles.MP4)
+                          Text("Accept", Styles.Btn & Styles.MP4, () =>
+                            {
+                                BC.Game.Game.Commands.JoinGame(c.ID, c.Challenger);
+                                BC.Game.Game.Commands.JoinGame(c.ID, c.Challenged);
+                                BC.Game.Game.Commands.AcceptChallenge(c.ID, c.Challenger, c.Challenged);
+                                GameID = c.ID;
+                                GameRepository.Instance.TryGetGame(GameID, out Game);
+                                PlayerColor = PieceColor.Black;
+                                Game.HasBlackPlayer = true;
+                            }),
+                          Text("Deny", Styles.Btn & Styles.MP4, () => BC.Game.Game.Commands.DenyChallenge(c.ID, c.Challenger, c.Challenged))
                       )
                 )));
         }
 
-        private VNode FriendSelect()
+        private VNode FriendChallenge()
         {
-            if (GameID == default)
-            {
-                GameID = AggregateID<BC.Game.Game>.Create();
-                int key = 999;
-                while (GameRepository.Instance.Keys.Contains(key))
-                    key++;
-                BC.Game.Game.Commands.OpenGame(GameID, Gamemode.PvF, key);
-            }
             var friends = AccountProjection.Accounts.Where(a => AccountEntry.Friends.Contains(a.ID));
             return Div(
                 Fragment(friends.Select(f =>
-                Row(
-                    Text(f.Username),
-                    Text("Challenge", Styles.Btn & Styles.MP4, () => BC.Game.Game.Commands.RequestChallenge(GameID, AccountEntry.ID, f.ID)))))
+                        Row(
+                            Text(f.Username),
+                            Text("Challenge", Styles.Btn & Styles.MP4, () => ChallengeFriend(f))
+                        )
+                )),
+                Text("back", Styles.Btn & Styles.MP4, () => RenderMode = Rendermode.Gameboard)
             );
         }
+
+        private void ChallengeFriend(AccountEntry accountEntry)
+        {
+            GameID = AggregateID<BC.Game.Game>.Create();
+            BC.Game.Game.Commands.OpenGame(GameID, Gamemode.PvF);
+            GameRepository.Instance.TryGetGame(GameID, out Game);
+
+            BC.Game.Game.Commands.RequestChallenge(GameID, AccountEntry.ID, accountEntry.ID);
+            PlayerColor = PieceColor.White;
+            Game.HasWhitePlayer = true;
+            RenderMode = Rendermode.WaitingForChallenged;
+        }
+
 
         private VNode GetBoardVNode(Gameboard gameboard, (BasePiece start, int target) lastmove)
         {
@@ -220,8 +237,28 @@ namespace VnodeTest
         private VNode RenderBoard()
         {
             VNode board = GetBoardVNode(Gameboard, Game.Lastmove);
-
+            //rethink
+            if (Game.Timer - Game.Elapsed.Seconds <= 0)
+            {
+                BC.Game.Game.Commands.CloseGame(GameID);
+                RenderMode = Rendermode.ChallengeDenied;
+            }
             return Div(
+                !Game.Winner.HasValue
+                    ? Text("Surrender", Styles.AbortBtn & Styles.MP4, () =>
+                        {
+                            if (PlayerColor == PieceColor.Black)
+                                Game.Winner = PieceColor.White;
+                            else
+                                Game.Winner = PieceColor.Black;
+                        })
+                    : Text("Close Game", Styles.AbortBtn & Styles.MP4, () =>
+                    {
+                        BC.Game.Game.Commands.CloseGame(GameID);
+                        BC.Game.Game.Commands.SaveGame(GameID, Allmoves());
+                        Game = default;
+                        RenderMode = Rendermode.Gameboard;
+                    }),
                 Row(
                     Div(SelectedPreviousMove.Board != null ? GetBoardVNode(SelectedPreviousMove.Board, SelectedPreviousMove.LastMove) : board),
                     Div(Text("Pause", Styles.AbortBtn & Styles.MP4, PauseGame), RenderPreviousMoves())
@@ -232,6 +269,14 @@ namespace VnodeTest
                 Text($"Gameroom: {Game.ID}"),
                 Game.GameOver ? RenderGameOver() : null
             );
+        }
+
+        private string Allmoves()
+        {
+            StringBuilder allmoves = new StringBuilder();
+            foreach ((Gameboard Board, (BasePiece start, int target) Lastmove) entry in Game.Moves.Where(g => Game.Moves.IndexOf(g) >= 1))
+                allmoves.Append(Game.Gameboard.ParseToAN(entry.Lastmove.start.Copy(), entry.Lastmove.target, Game.Moves[Game.Moves.IndexOf(entry) - 1].Board.Copy()).Append('.'));
+            return allmoves.ToString();
         }
 
         private void PauseGame()

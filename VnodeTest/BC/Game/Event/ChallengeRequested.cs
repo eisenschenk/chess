@@ -11,6 +11,7 @@ namespace VnodeTest.BC.Game.Event
     {
         public AggregateID<Account.Account> AccountID { get; }
         public AggregateID<Account.Account> FriendID { get; }
+
         public ChallengeRequested(AggregateID<Game> id, AggregateID<Account.Account> accountID, AggregateID<Account.Account> friendID) : base(id)
         {
             AccountID = accountID;

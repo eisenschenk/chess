@@ -13,11 +13,9 @@ namespace VnodeTest.BC.Game.Event
     public class GameOpened : AggregateEvent<Game>
     {
         public Gamemode Gamemode { get; }
-        public int RepositoryID { get; }
-        public GameOpened(AggregateID<Game> id, Gamemode gamemode, int repositoryID) : base(id)
+        public GameOpened(AggregateID<Game> id, Gamemode gamemode) : base(id)
         {
             Gamemode = gamemode;
-            RepositoryID = repositoryID;
         }
     }
 }

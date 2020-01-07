@@ -56,6 +56,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\..\..\Projekt\examples\ACL.ES\ACL.ES.csproj">
+      <Project>{F87F4FDB-C193-4AFE-96F6-A09179E55905}</Project>
+      <Name>ACL.ES</Name>
+    </ProjectReference>
     <ProjectReference Include="..\VnodeTest\VnodeTest.csproj">
       <Project>{8A5D6D48-11F3-46DA-8898-4DDCA76E336B}</Project>
       <Name>VnodeTest</Name>
