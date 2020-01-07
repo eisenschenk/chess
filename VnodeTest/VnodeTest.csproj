@@ -62,6 +62,8 @@
     <Compile Include="BC\Account\AccountProjection.cs" />
     <Compile Include="BC\Account\Command\AbortFriendship.cs" />
     <Compile Include="BC\Account\Event\FriendshipAborted.cs" />
+    <Compile Include="BC\Friendship\Friendship.cs" />
+    <Compile Include="BC\Friendship\FriendshipProjection.cs" />
     <Compile Include="BC\Game\Command\AcceptChallenge.cs" />
     <Compile Include="BC\Account\Command\AcceptFriendRequest.cs" />
     <Compile Include="BC\Account\Command\AddFriend.cs" />
@@ -136,6 +138,9 @@
       <Name>ACL.ES</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="BC\Friendship\Command\" />
+    <Folder Include="BC\Friendship\Event\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

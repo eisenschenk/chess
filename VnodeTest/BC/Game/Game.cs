@@ -36,7 +36,7 @@ namespace VnodeTest.BC.Game
             public static void CloseGame(AggregateID<Game> id) =>
                 MessageBus.Instance.Send(new CloseGame(id));
             public static void SaveGame(AggregateID<Game> id, string moves) =>
-                MessageBus.Instance.Send(new GameSaved(id, moves));
+                MessageBus.Instance.Send(new SaveGame(id, moves));
             public static void JoinGame(AggregateID<Game> id, AggregateID<Account.Account> accountID) =>
                 MessageBus.Instance.Send(new GameJoined(id, accountID));
             public static void ResetGame(AggregateID<Game> id) =>

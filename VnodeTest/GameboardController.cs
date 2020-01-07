@@ -251,11 +251,11 @@ namespace VnodeTest
                                 Game.Winner = PieceColor.White;
                             else
                                 Game.Winner = PieceColor.Black;
+                            BC.Game.Game.Commands.CloseGame(GameID);
+                            BC.Game.Game.Commands.SaveGame(GameID, Allmoves());
                         })
                     : Text("Close Game", Styles.AbortBtn & Styles.MP4, () =>
                     {
-                        BC.Game.Game.Commands.CloseGame(GameID);
-                        BC.Game.Game.Commands.SaveGame(GameID, Allmoves());
                         Game = default;
                         RenderMode = Rendermode.Gameboard;
                     }),
@@ -270,12 +270,15 @@ namespace VnodeTest
                 Game.GameOver ? RenderGameOver() : null
             );
         }
-
+        //TODO: look at copy
         private string Allmoves()
         {
             StringBuilder allmoves = new StringBuilder();
             foreach ((Gameboard Board, (BasePiece start, int target) Lastmove) entry in Game.Moves.Where(g => Game.Moves.IndexOf(g) >= 1))
-                allmoves.Append(Game.Gameboard.ParseToAN(entry.Lastmove.start.Copy(), entry.Lastmove.target, Game.Moves[Game.Moves.IndexOf(entry) - 1].Board.Copy()).Append('.'));
+            {
+                allmoves.Append(Game.Gameboard.ParseToAN(entry.Lastmove.start, entry.Lastmove.target, Game.Moves[Game.Moves.IndexOf(entry) - 1].Board));
+                allmoves.Append(".");
+            }
             return allmoves.ToString();
         }
 

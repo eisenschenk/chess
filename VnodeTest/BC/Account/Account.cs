@@ -21,16 +21,12 @@ namespace VnodeTest.BC.Account
         private List<AggregateID<Account>> ReceivedFriendReuests = new List<AggregateID<Account>>();
 
 
-
         public class Handler : AggregateCommandHandler<Account>
         {
             public Handler(IRepository repository, IMessageBus bus) : base(repository, bus)
             {
             }
         }
-
-
-
 
         public static class Commands
         {
