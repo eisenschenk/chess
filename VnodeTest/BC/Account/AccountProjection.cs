@@ -47,9 +47,6 @@ namespace VnodeTest.BC.Account
         public string Password { get; }
         public DateTimeOffset CreatedAt { get; }
         public bool LoggedIn { get; set; }
-        public List<AccountID> Friends { get; }
-        public List<AccountID> PendingFriendRequests { get; } = new List<AccountID>();
-        public List<AccountID> ReceivedFriendRequests { get; } = new List<AccountID>();
         public List<AccountID> ReceivedChallenges { get; } = new List<AccountID>();
         public List<AccountID> PendingChallenges { get; } = new List<AccountID>();
 
@@ -59,7 +56,6 @@ namespace VnodeTest.BC.Account
             Username = username;
             Password = password;
             CreatedAt = createdAt;
-            Friends = friends;
         }
 
         VNode ISearchable.Render()

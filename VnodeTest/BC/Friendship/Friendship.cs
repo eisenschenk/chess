@@ -24,17 +24,17 @@ namespace VnodeTest.BC.Friendship
         {
             public static void AcceptFriendRequest(AggregateID<Friendship> id, AggregateID<Account.Account> friendIDa, AggregateID<Account.Account> friendIDb) =>
                 MessageBus.Instance.Send(new AcceptFriendRequest(id, friendIDa, friendIDb));
-            public static void AbortFriend(AggregateID<Friendship> id, AggregateID<Account.Account> friendIDa, AggregateID<Account.Account> friendIDb) =>
-                MessageBus.Instance.Send(new AbortFriendship(id, friendIDa, friendIDb));
+            public static void AbortFriend(AggregateID<Friendship> id) =>
+                MessageBus.Instance.Send(new AbortFriendship(id));
             public static void RequestFriend(AggregateID<Friendship> id, AggregateID<Account.Account> friendIDa, AggregateID<Account.Account> friendIDb) =>
                 MessageBus.Instance.Send(new RequestFriendship(id, friendIDa, friendIDb));
-            public static void DenyFriendRequest(AggregateID<Friendship> id, AggregateID<Account.Account> friendIDa, AggregateID<Account.Account> friendIDb) =>
-                MessageBus.Instance.Send(new DenyFriendRequest(id, friendIDa, friendIDb));
+            public static void DenyFriendRequest(AggregateID<Friendship> id) =>
+                MessageBus.Instance.Send(new DenyFriendRequest(id));
         }
      
         public IEnumerable<IEvent> On(AbortFriendship command)
         {
-            yield return new FriendshipAborted(command.ID, command.FriendIDa, command.FriendIDb);
+            yield return new FriendshipAborted(command.ID);
         }
         public IEnumerable<IEvent> On(RequestFriendship command)
         {
@@ -46,7 +46,7 @@ namespace VnodeTest.BC.Friendship
         }
         public IEnumerable<IEvent> On(DenyFriendRequest command)
         {
-            yield return new FriendRequestDenied(command.ID, command.FriendIDa, command.FriendIDb);
+            yield return new FriendRequestDenied(command.ID);
         }
 
         public override void Apply(IEvent @event)

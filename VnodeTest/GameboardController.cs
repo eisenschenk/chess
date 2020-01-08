@@ -23,6 +23,8 @@ namespace VnodeTest
         private IEngine Engine;
         private string Enginemove;
         public BasePiece Selected { get; set; }
+        public BC.Friendship.FriendshipProjection FriendshipProjection { get; }
+
         private BasePiece[] PromotionSelect = new BasePiece[4];
         private (Gameboard Board, (BasePiece start, int target) LastMove) SelectedPreviousMove;
         private bool Pause;
@@ -32,11 +34,12 @@ namespace VnodeTest
         public Rendermode RenderMode;
         private AccountEntry AccountEntry;
         private AggregateID<BC.Game.Game> GameID;
-        public GameboardController(AccountProjection accountProjection, AccountEntry accountEntry, BC.Game.GameProjection gameProjection)
+        public GameboardController(AccountProjection accountProjection, AccountEntry accountEntry, BC.Game.GameProjection gameProjection, BC.Friendship.FriendshipProjection friendshipProjection)
         {
             AccountProjection = accountProjection;
             AccountEntry = accountEntry;
             GameProjection = gameProjection;
+            FriendshipProjection = friendshipProjection;
             ThreadPool.QueueUserWorkItem(o =>
             {
                 while (true)
@@ -153,8 +156,8 @@ namespace VnodeTest
             return Div(
                 Fragment(challenges.Select(c =>
                     Div(
-                        Game.HasOpenSpots && Game.Timer - Game.Elapsed.Seconds >= 0 ? Text($"Waiting for Friend: {Game.Timer - Game.Elapsed.Seconds}") : null,
-                        Text("Abort Challenge!", Styles.AbortBtn & Styles.MP4, () => BC.Game.Game.Commands.DenyChallenge(c.ID, c.Challenger, c.Challenged))
+                        Game.HasOpenSpots && c.Created.AddSeconds(c.Timer) > DateTime.Now ? Text($"Waiting for Friend: {c.Timer - c.Elapsed.Seconds}") : null,
+                        Text("Abort Challenge!", Styles.AbortBtn & Styles.MP4, () => BC.Game.Game.Commands.DenyChallenge(c.ID))
                     )
                 )),
                 Text("back", Styles.Btn & Styles.MP4, () => { Game = null; RenderMode = Rendermode.Gameboard; })
@@ -183,14 +186,15 @@ namespace VnodeTest
                                 PlayerColor = PieceColor.Black;
                                 Game.HasBlackPlayer = true;
                             }),
-                          Text("Deny", Styles.Btn & Styles.MP4, () => BC.Game.Game.Commands.DenyChallenge(c.ID, c.Challenger, c.Challenged))
+                          Text("Deny", Styles.Btn & Styles.MP4, () => BC.Game.Game.Commands.DenyChallenge(c.ID))
                       )
                 )));
         }
 
         private VNode FriendChallenge()
         {
-            var friends = AccountProjection.Accounts.Where(a => AccountEntry.Friends.Contains(a.ID));
+            var _friends = FriendshipProjection.GetFriends(AccountEntry.ID);
+            var friends = AccountProjection.Accounts.Where(x => _friends.Contains(x.ID));
             return Div(
                 Fragment(friends.Select(f =>
                         Row(
@@ -237,12 +241,7 @@ namespace VnodeTest
         private VNode RenderBoard()
         {
             VNode board = GetBoardVNode(Gameboard, Game.Lastmove);
-            //rethink
-            if (Game.Timer - Game.Elapsed.Seconds <= 0)
-            {
-                BC.Game.Game.Commands.CloseGame(GameID);
-                RenderMode = Rendermode.ChallengeDenied;
-            }
+
             return Div(
                 !Game.Winner.HasValue
                     ? Text("Surrender", Styles.AbortBtn & Styles.MP4, () =>

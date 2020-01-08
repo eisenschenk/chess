@@ -50,10 +50,11 @@ namespace VnodeTest
             FriendshipProjection.Init();
             FriendshipHandler = new Friendship.Handler(Repository, bus);
 
+            GameProjection.StartThread();
         }
 
         public GameboardController CreateGameboardController(AccountEntry accountEntry) =>
-            new GameboardController(AccountProjection, accountEntry, GameProjection);
+            new GameboardController(AccountProjection, accountEntry, GameProjection, FriendshipProjection);
         public LoginController CreateLoginController() =>
             new LoginController(AccountProjection);
         public UserController CreateUserController(AccountEntry accountEntry) =>

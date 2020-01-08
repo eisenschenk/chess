@@ -38,7 +38,7 @@ namespace VnodeTest
                 RenderMode.Overview => RenderOverview(friends),
                 RenderMode.AddFriend => RenderAddFriend(),
                 RenderMode.DeleteFriend => RenderDeleteFriend(friends),
-                RenderMode.PendingRequests => RenderReceiveRequests(friends),
+                RenderMode.PendingRequests => RenderReceiveRequests(),
                 RenderMode.PlayFriend => RenderChallengeFriend(),
                 _ => null,
             };
@@ -53,13 +53,13 @@ namespace VnodeTest
             );
         }
 
-        private VNode RenderReceiveRequests(IEnumerable<AccountEntry> friendAccounts)
+        private VNode RenderReceiveRequests()
         {
             return Div(
                 Fragment(FriendshipProjection.GetFriendshipRequests(AccountEntry.ID).Select(p => Row(
                         Text(AccountProjection.Accounts.Where(x => x.ID == p.FriendAID).FirstOrDefault().Username),
                         Text("accept", Styles.Btn & Styles.MP4, () => Friendship.Commands.AcceptFriendRequest(p.ID, AccountEntry.ID, p.FriendAID)),
-                        Text("deny", Styles.Btn & Styles.MP4, () => Friendship.Commands.DenyFriendRequest(p.ID, AccountEntry.ID, p.FriendBID))
+                        Text("deny", Styles.Btn & Styles.MP4, () => Friendship.Commands.DenyFriendRequest(p.ID))
                 ))),
                 Text("back", Styles.Btn & Styles.MP4, () => Rendermode = RenderMode.Overview)
             );
@@ -85,7 +85,7 @@ namespace VnodeTest
         {
             return Div(
                  SearchbarComponent<AccountEntry>.Render(friends, a =>
-                 Friendship.Commands.AbortFriend(FriendshipProjection.GetFriendshipEntry(AccountEntry.ID, a.ID).ID, AccountEntry.ID, a.ID)),
+                 Friendship.Commands.AbortFriend(FriendshipProjection.GetFriendshipEntry(AccountEntry.ID, a.ID).ID)),
                  Text("back", Styles.Btn & Styles.MP4, () => Rendermode = RenderMode.Overview)
             );
         }

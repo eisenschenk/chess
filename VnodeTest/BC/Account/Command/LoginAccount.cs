@@ -11,12 +11,14 @@ namespace VnodeTest.BC.Account.Command
     {
         public string Username { get; }
         public string Password { get; }
+        public string Hashsalt { get; }
         public GameboardController GameboardController { get; set; }
 
-        public LoginAccount(AggregateID<Account> id, string username, string password) : base(id)
+        public LoginAccount(AggregateID<Account> id, string username, string password, string hashsalt) : base(id)
         {
             Username = username;
             Password = password;
+            Hashsalt = hashsalt;
         }
     }
 }

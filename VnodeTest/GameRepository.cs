@@ -65,9 +65,6 @@ namespace VnodeTest
         public TimeSpan BlackClock { get => _BlackClock; private set => _BlackClock = value; }
         private DateTime LastClockUpdate;
         public readonly List<(Gameboard Board, (BasePiece start, int target) LastMove)> Moves = new List<(Gameboard Board, (BasePiece start, int target) LastMove)>();
-        public double Timer = 60;
-        private DateTime Gamestart;
-        public TimeSpan Elapsed => DateTime.Now - Gamestart;
 
 
 
@@ -80,7 +77,6 @@ namespace VnodeTest
             LastClockUpdate = DateTime.Now;
             WhiteClock = playerClockTime;
             BlackClock = playerClockTime;
-            Gamestart = DateTime.Now;
             PlayedByEngine = gamemode switch
             {
                 Gamemode.PvP => (false, false),

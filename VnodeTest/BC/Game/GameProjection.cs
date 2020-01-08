@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using VnodeTest.BC.Game.Event;
 using VnodeTest.GameEntities;
@@ -21,6 +22,28 @@ namespace VnodeTest.BC.Game
 
         public GameProjection(IEventStore store, IMessageBus bus) : base(store, bus)
         {
+
+        }
+
+        public void StartThread()
+        {
+            ThreadPool.QueueUserWorkItem(o =>
+            {
+                while (true)
+                    foreach (GameEntry entry in Games.ToArray())
+                        if (!StillValid(entry))
+                            Game.Commands.CloseGame(entry.ID);
+            });
+        }
+
+        private bool StillValid(GameEntry entry)
+        {
+            bool IsValid()
+            {
+                return entry.Created.AddSeconds(entry.Timer) > DateTime.Now;
+            }
+
+            return GameRepository.Instance.TryGetGame(entry.ID, out var game) && game.HasOpenSpots && IsValid();
         }
         private void On(GameOpened @event)
         {
@@ -44,15 +67,11 @@ namespace VnodeTest.BC.Game
         }
         private void On(GameClosed @event)
         {
-            Dict[@event.ID].PlayerBlack = default;
-            Dict[@event.ID].PlayerWhite = default;
-            Dict[@event.ID].Challenged = default;
-            Dict[@event.ID].Challenger = default;
+            Dict.Remove(@event.ID);
         }
         private void On(ChallengeDenied @event)
         {
-            Dict[@event.ID].Challenger = default;
-            Dict[@event.ID].Challenged = default;
+            Dict.Remove(@event.ID);
         }
         private void On(GameSaved @event)
         {
@@ -78,6 +97,9 @@ namespace VnodeTest.BC.Game
         public Gamemode Gamemode { get; }
         public string AllMoves;
         public bool LoggedIn;
+        public DateTime Created = DateTime.Now;
+        public int Timer = 30;
+        public TimeSpan Elapsed => DateTime.Now - Created;
         public AggregateID<Account.Account> Challenger { get; set; }
         public AggregateID<Account.Account> Challenged { get; set; }
         public AggregateID<Account.Account> PlayerWhite { get; set; }
@@ -89,7 +111,7 @@ namespace VnodeTest.BC.Game
             ID = id;
             Gamemode = gamemode;
         }
-        
+
     }
 }
 

@@ -114,6 +114,7 @@
     <Compile Include="ISearchable.cs" />
     <Compile Include="LoginController.cs" />
     <Compile Include="PaginationComponent.cs" />
+    <Compile Include="Passwordhelper.cs" />
     <Compile Include="PM\AddFriendPM.cs" />
     <Compile Include="PM\DeleteFriendPM.cs" />
     <Compile Include="UserController.cs" />

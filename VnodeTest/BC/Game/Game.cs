@@ -29,8 +29,8 @@ namespace VnodeTest.BC.Game
                 MessageBus.Instance.Send(new OpenGame(id, gamemode));
             public static void RequestChallenge(AggregateID<Game> id, AggregateID<Account.Account> accountID, AggregateID<Account.Account> friendID) =>
                 MessageBus.Instance.Send(new RequestChallenge(id, accountID, friendID));
-            public static void DenyChallenge(AggregateID<Game> id, AggregateID<Account.Account> accountID, AggregateID<Account.Account> friendID) =>
-                MessageBus.Instance.Send(new DenyChallenge(id, accountID, friendID));
+            public static void DenyChallenge(AggregateID<Game> id) =>
+                MessageBus.Instance.Send(new DenyChallenge(id));
             public static void AcceptChallenge(AggregateID<Game> id, AggregateID<Account.Account> accountID, AggregateID<Account.Account> friendID) =>
               MessageBus.Instance.Send(new AcceptChallenge(id, accountID, friendID));
             public static void CloseGame(AggregateID<Game> id) =>
@@ -57,7 +57,7 @@ namespace VnodeTest.BC.Game
         }
         public IEnumerable<IEvent> On(DenyChallenge command)
         {
-            yield return new ChallengeDenied(command.ID, command.AccountID, command.FriendID);
+            yield return new ChallengeDenied(command.ID);
         }
         public IEnumerable<IEvent> On(CloseGame command)
         {
