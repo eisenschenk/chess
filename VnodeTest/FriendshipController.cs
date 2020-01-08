@@ -30,11 +30,8 @@ namespace VnodeTest
 
         public VNode Render()
         {
-            var friendAccounts = FriendshipProjection.Friendships
-                .Where(x => x.Accepted == true && x.FriendBID == AccountEntry.ID || x.FriendAID == AccountEntry.ID);
-            var _friendAccountsA = friendAccounts.Where(x => x.FriendAID != AccountEntry.ID).Select(x => x.FriendAID);
-            var _friendAccountsB = friendAccounts.Where(x => x.FriendBID != AccountEntry.ID).Select(c => c.FriendBID);
-            var friends = _friendAccountsA.Concat(_friendAccountsB).Select(f => AccountProjection.Accounts.Where(g => g.ID == f).SingleOrDefault());
+            var _friends = FriendshipProjection.GetFriends(AccountEntry.ID);
+            var friends = AccountProjection.Accounts.Where(a => _friends.Contains(a.ID));
 
             return Rendermode switch
             {
@@ -48,9 +45,8 @@ namespace VnodeTest
         }
         private VNode RenderOverview(IEnumerable<AccountEntry> friendAccounts)
         {
-            var friendRequests = FriendshipProjection.Friendships.Where(x => x.FriendBID == AccountEntry.ID && x.Requested == true && x.Accepted == default);
             return Div(
-                Text($"Pending Friendrequests({friendRequests.Count()})", Styles.Btn & Styles.MP4, () => Rendermode = RenderMode.PendingRequests),
+                Text($"Pending Friendrequests({FriendshipProjection.GetFriendrequests(AccountEntry.ID).Count()})", Styles.Btn & Styles.MP4, () => Rendermode = RenderMode.PendingRequests),
                 Text("Add Friend", Styles.Btn & Styles.MP4, () => Rendermode = RenderMode.AddFriend),
                 Text("Remove Friend", Styles.Btn & Styles.MP4, () => Rendermode = RenderMode.DeleteFriend),
                 friendAccounts.Any() ? Fragment(friendAccounts.Select(f => Text($"{f.Username}", !f.LoggedIn ? Styles.TCblack : Styles.TCgreen))) : Text("you got no friends ;(")
@@ -59,18 +55,11 @@ namespace VnodeTest
 
         private VNode RenderReceiveRequests(IEnumerable<AccountEntry> friendAccounts)
         {
-            AggregateID<Account> FriendID(FriendshipEntry p)
-            {
-                if (p.FriendAID != AccountEntry.ID)
-                    return p.FriendAID;
-                return p.FriendBID;
-            }
-            var friendRequests = FriendshipProjection.Friendships.Where(x => x.FriendBID == AccountEntry.ID && x.Requested == true && x.Accepted == false);
             return Div(
-                Fragment(friendRequests.Select(p => Row(
-                        Text(friendAccounts.Count().ToString()),
-                        Text("accept", Styles.Btn & Styles.MP4, () => Friendship.Commands.AcceptFriendRequest(AggregateID<Friendship>.Create(), AccountEntry.ID, FriendID(p))),
-                        Text("deny", Styles.Btn & Styles.MP4, () => Friendship.Commands.DenyFriendRequest(AggregateID<Friendship>.Create(), AccountEntry.ID, FriendID(p)))
+                Fragment(FriendshipProjection.GetFriendshipRequests(AccountEntry.ID).Select(p => Row(
+                        Text(AccountProjection.Accounts.Where(x => x.ID == p.FriendAID).FirstOrDefault().Username),
+                        Text("accept", Styles.Btn & Styles.MP4, () => Friendship.Commands.AcceptFriendRequest(p.ID, AccountEntry.ID, p.FriendAID)),
+                        Text("deny", Styles.Btn & Styles.MP4, () => Friendship.Commands.DenyFriendRequest(p.ID, AccountEntry.ID, p.FriendBID))
                 ))),
                 Text("back", Styles.Btn & Styles.MP4, () => Rendermode = RenderMode.Overview)
             );
@@ -95,7 +84,8 @@ namespace VnodeTest
         private VNode RenderDeleteFriend(IEnumerable<AccountEntry> friends)
         {
             return Div(
-                 SearchbarComponent<AccountEntry>.Render(friends, a => Friendship.Commands.AbortFriend(AggregateID<Friendship>.Create(), AccountEntry.ID, a.ID)),
+                 SearchbarComponent<AccountEntry>.Render(friends, a =>
+                 Friendship.Commands.AbortFriend(FriendshipProjection.GetFriendshipEntry(AccountEntry.ID, a.ID).ID, AccountEntry.ID, a.ID)),
                  Text("back", Styles.Btn & Styles.MP4, () => Rendermode = RenderMode.Overview)
             );
         }

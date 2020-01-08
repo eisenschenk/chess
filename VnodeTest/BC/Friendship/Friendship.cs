@@ -22,31 +22,16 @@ namespace VnodeTest.BC.Friendship
         }
         public static class Commands
         {
-            //public static void AcceptFriendRequest(AggregateID<Friendship> id, AggregateID<Account.Account> friendIDa, AggregateID<Account.Account> friendIDb) =>
-            //    PM.AddFriendPM.PMAddFriend(id, friendIDa, friendIDb);
             public static void AcceptFriendRequest(AggregateID<Friendship> id, AggregateID<Account.Account> friendIDa, AggregateID<Account.Account> friendIDb) =>
-                MessageBus.Instance.Send(new AddFriend(id, friendIDa, friendIDb));
-            //public static void AbortFriend(AggregateID<Friendship> id, AggregateID<Account.Account> friendIDa, AggregateID<Account.Account> friendIDb) =>
-            //    PM.DeleteFriendPM.PMDeleteFriend(id, friendIDa, friendIDb);
+                MessageBus.Instance.Send(new AcceptFriendRequest(id, friendIDa, friendIDb));
             public static void AbortFriend(AggregateID<Friendship> id, AggregateID<Account.Account> friendIDa, AggregateID<Account.Account> friendIDb) =>
-                MessageBus.Instance.Send(new DeleteFriend(id, friendIDa, friendIDb));
+                MessageBus.Instance.Send(new AbortFriendship(id, friendIDa, friendIDb));
             public static void RequestFriend(AggregateID<Friendship> id, AggregateID<Account.Account> friendIDa, AggregateID<Account.Account> friendIDb) =>
                 MessageBus.Instance.Send(new RequestFriendship(id, friendIDa, friendIDb));
             public static void DenyFriendRequest(AggregateID<Friendship> id, AggregateID<Account.Account> friendIDa, AggregateID<Account.Account> friendIDb) =>
                 MessageBus.Instance.Send(new DenyFriendRequest(id, friendIDa, friendIDb));
         }
-        public IEnumerable<IEvent> On(AddFriend command)
-        {
-            if (command.ID == default)
-                throw new Exception("Friends ID not valid");
-            yield return new FriendAdded(command.ID, command.FriendIDa, command.FriendIDb);
-        }
-        public IEnumerable<IEvent> On(DeleteFriend command)
-        {
-            if (command.ID == default)
-                throw new Exception("Not Friends with this ID");
-            yield return new FriendDeleted(command.ID, command.FriendIDa, command.FriendIDb);
-        }
+     
         public IEnumerable<IEvent> On(AbortFriendship command)
         {
             yield return new FriendshipAborted(command.ID, command.FriendIDa, command.FriendIDb);

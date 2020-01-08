@@ -15,7 +15,7 @@ namespace VnodeTest.BC.Friendship.Event
         public FriendRequestAccepted(AggregateID<Friendship> id, AggregateID<Account.Account> friendIDa, AggregateID<Account.Account> friendIDb) : base(id)
         {
             FriendIDa = friendIDa;
-            FriendIDa = friendIDb;
+            FriendIDb = friendIDb;
         }
 
     }

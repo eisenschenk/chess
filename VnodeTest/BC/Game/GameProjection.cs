@@ -89,6 +89,7 @@ namespace VnodeTest.BC.Game
             ID = id;
             Gamemode = gamemode;
         }
+        
     }
 }
 

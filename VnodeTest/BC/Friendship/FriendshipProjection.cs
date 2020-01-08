@@ -27,30 +27,47 @@ namespace VnodeTest.BC.Friendship
         private void On(FriendRequestAccepted @event)
         {
             Dict[@event.ID].Accepted = true;
+            Dict[@event.ID].Requested = false;
         }
-        //private void On(FriendAdded @event)
-        //{
-        //    Dict[@event.ID].Friends.Add(@event.FriendID);
-        //}
         private void On(FriendshipAborted @event)
         {
-            Dict[@event.ID] = default;
+            Dict.Remove(@event.ID);
         }
-        //private void On(FriendDeleted @event)
-        //{
-        //    Dict[@event.ID].Friends.Remove(@event.FriendID);
-        //}
         private void On(FriendshipRequested @event)
         {
+            Dict.Add(@event.ID, new FriendshipEntry(@event.ID, @event.FriendIDa, @event.FriendIDb));
             Dict[@event.ID].Requested = true;
         }
         private void On(FriendRequestDenied @event)
         {
-            Dict[@event.ID].Accepted = false;
-            Dict[@event.ID].Requested = false;
+            Dict.Remove(@event.ID);
         }
 
 
+        public IEnumerable<AggregateID<Account.Account>> GetFriendrequests(AggregateID<Account.Account> accountID)
+        {
+            return Friendships.Where(f => f.FriendBID == accountID && f.Accepted == false && f.Requested == true).Select(s => s.FriendAID);
+        }
+
+        public IEnumerable<AggregateID<Account.Account>> GetFriends(AggregateID<Account.Account> accountID)
+        {
+            var _friendships = Friendships.Where(f => f.Accepted == true && (f.FriendAID == accountID || f.FriendBID == accountID));
+            var _someFriendsA = _friendships.Where(x => x.FriendAID != accountID).Select(f => f.FriendAID);
+            var _someFriendsB = _friendships.Where(x => x.FriendBID != accountID).Select(f => f.FriendBID);
+            return _someFriendsA.Concat(_someFriendsB);
+        }
+
+        public IEnumerable<FriendshipEntry> GetFriendshipRequests(AggregateID<Account.Account> accountID)
+        {
+            return Friendships.Where(x => x.Requested == true && x.FriendBID == accountID && x.Accepted == false);
+        }
+
+        public FriendshipEntry GetFriendshipEntry(AggregateID<Account.Account> accountIDa, AggregateID<Account.Account> accountIDb)
+        {
+            return Friendships
+                .Where(e => e.Accepted == true && ((e.FriendAID == accountIDa && e.FriendBID == accountIDb) || e.FriendAID == accountIDb && e.FriendBID == accountIDa))
+                .SingleOrDefault();
+        }
     }
 
     public class FriendshipEntry //: ISearchable
@@ -71,13 +88,5 @@ namespace VnodeTest.BC.Friendship
             FriendBID = friendB;
         }
 
-        //VNode ISearchable.Render()
-        //{
-        //    return Text(Username);
-        //}
-        //bool ISearchable.IsMatch(string searchquery)
-        //{
-        //    return Username.Contains(searchquery);
-        //}
     }
 }

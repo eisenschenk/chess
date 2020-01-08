@@ -66,8 +66,6 @@
     <Compile Include="BC\Friendship\FriendshipProjection.cs" />
     <Compile Include="BC\Game\Command\AcceptChallenge.cs" />
     <Compile Include="BC\Friendship\Command\AcceptFriendRequest.cs" />
-    <Compile Include="BC\Friendship\Command\AddFriend.cs" />
-    <Compile Include="BC\Friendship\Command\DeleteFriend.cs" />
     <Compile Include="BC\Game\Command\CloseGame.cs" />
     <Compile Include="BC\Game\Command\DenyChallenge.cs" />
     <Compile Include="BC\Friendship\Command\DenyFriendRequest.cs" />
@@ -85,8 +83,6 @@
     <Compile Include="BC\Game\Event\ChallengeAccepted.cs" />
     <Compile Include="BC\Game\Event\ChallengeDenied.cs" />
     <Compile Include="BC\Game\Event\ChallengeRequested.cs" />
-    <Compile Include="BC\Friendship\Event\FriendAdded.cs" />
-    <Compile Include="BC\Friendship\Event\FriendDeleted.cs" />
     <Compile Include="BC\Friendship\Event\FriendRequestAccepted.cs" />
     <Compile Include="BC\Friendship\Event\FriendRequestDenied.cs" />
     <Compile Include="BC\Friendship\Event\FriendshipRequested.cs" />
