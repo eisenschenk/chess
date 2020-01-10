@@ -8,9 +8,9 @@ using VnodeTest.GameEntities;
 
 namespace VnodeTest.BC.Game.Command
 {
-    public class CloseGame : AggregateCommand<Game>
+    public class DeleteGame : AggregateCommand<Game>
     {
-        public CloseGame(AggregateID<Game> id) : base(id)
+        public DeleteGame(AggregateID<Game> id) : base(id)
         {
         }
     }

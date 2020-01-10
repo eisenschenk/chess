@@ -54,7 +54,7 @@ namespace VnodeTest.BC.Friendship
             Dict.Add(@event.ID, friendship);
             Dict[@event.ID].Requested = true;
 
-            AddAccountFriendRequest(@event.Sender, friendship);
+            //AddAccountFriendRequest(@event.Sender, friendship);
             AddAccountFriendRequest(@event.Receiver, friendship);
         }
         private void On(FriendRequestDenied @event)
@@ -63,7 +63,7 @@ namespace VnodeTest.BC.Friendship
 
             Dict.Remove(@event.ID);
 
-            DeleteAccountFriendRequest(friendship.Sender, @event.ID);
+            //DeleteAccountFriendRequest(friendship.Sender, @event.ID);
             DeleteAccountFriendRequest(friendship.Receiver, @event.ID);
         }
 
@@ -93,21 +93,27 @@ namespace VnodeTest.BC.Friendship
 
         public IEnumerable<(AccountID AccountID, FriendshipID FriendshipID)> GetFriends(AccountID accountID)
         {
-            return AccountFriends[accountID].Values.Select(f => (f.Sender == accountID ? f.Receiver : f.Sender, f.ID));
+            if (AccountFriends.TryGetValue(accountID, out _))
+                return AccountFriends[accountID].Values.Select(f => (f.Sender == accountID ? f.Receiver : f.Sender, f.ID));
+            return Enumerable.Empty<(AccountID AccountID, FriendshipID FriendshipID)>();
         }
 
         public IEnumerable<FriendshipEntry> GetFriendshipRequests(AccountID accountID)
         {
-            return AccountFriendRequests[accountID].Values;
+            if (AccountFriendRequests.TryGetValue(accountID, out _))
+                return AccountFriendRequests[accountID].Values;
+            return Enumerable.Empty<FriendshipEntry>();
         }
 
         public int GetFriendshipRequestCount(AccountID accountID)
         {
-            return AccountFriendRequests[accountID].Count;
+            if (AccountFriendRequests.TryGetValue(accountID, out _))
+                return AccountFriendRequests[accountID].Count;
+            return 0;
         }
     }
 
-    public class FriendshipEntry 
+    public class FriendshipEntry
     {
         public FriendshipID ID { get; }
         public AccountID Sender;

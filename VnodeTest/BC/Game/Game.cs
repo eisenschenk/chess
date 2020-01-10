@@ -32,10 +32,10 @@ namespace VnodeTest.BC.Game
                 MessageBus.Instance.Send(new DenyChallenge(id));
             public static void AcceptChallenge(AggregateID<Game> id, AggregateID<Account.Account> accountID, AggregateID<Account.Account> friendID) =>
               MessageBus.Instance.Send(new AcceptChallenge(id, accountID, friendID));
-            public static void CloseGame(AggregateID<Game> id) =>
-                MessageBus.Instance.Send(new CloseGame(id));
-            public static void SaveGame(AggregateID<Game> id, string moves) =>
-                MessageBus.Instance.Send(new SaveGame(id, moves));
+            public static void DeleteGame(AggregateID<Game> id) =>
+                MessageBus.Instance.Send(new DeleteGame(id));
+            public static void EndGame(AggregateID<Game> id, string moves) =>
+                MessageBus.Instance.Send(new EndGame(id, moves));
             public static void JoinGame(AggregateID<Game> id, AggregateID<Account.Account> accountID) =>
                 MessageBus.Instance.Send(new GameJoined(id, accountID));
             
@@ -57,13 +57,13 @@ namespace VnodeTest.BC.Game
         {
             yield return new ChallengeDenied(command.ID);
         }
-        public IEnumerable<IEvent> On(CloseGame command)
+        public IEnumerable<IEvent> On(DeleteGame command)
         {
-            yield return new GameClosed(command.ID);
+            yield return new GameDeleted(command.ID);
         }
-        public IEnumerable<IEvent> On(SaveGame command)
+        public IEnumerable<IEvent> On(EndGame command)
         {
-            yield return new GameSaved(command.ID, command.Moves);
+            yield return new GameEnded(command.ID, command.Moves);
         }
         public IEnumerable<IEvent> On(JoinGame command)
         {

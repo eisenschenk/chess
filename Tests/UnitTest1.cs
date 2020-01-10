@@ -41,7 +41,7 @@ namespace Tests
             var moves = moveSource.Split('.');
             var gameboard = new Gameboard();
             AggregateID<VnodeTest.BC.Game.Game> id = AggregateID<VnodeTest.BC.Game.Game>.Create();
-            var game = new Game(id, Gamemode.PvP, new Gameboard(), TimeSpan.FromDays(10));
+            var game = new Game(id, Gamemode.PvP, new Gameboard(), 10);
             foreach (string move in moves)
                 gameboard.TryAlgebraicNotaionToMyNotaion(move, game);
         }

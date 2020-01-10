@@ -31,7 +31,7 @@ namespace VnodeTest.BC.Game
                 while (true)
                     foreach (GameEntry entry in Games.ToArray())
                         if (!StillValid(entry))
-                            Game.Commands.CloseGame(entry.ID);
+                            Game.Commands.DeleteGame(entry.ID);
             });
         }
         //TODO gamedelete & gameended
@@ -39,12 +39,11 @@ namespace VnodeTest.BC.Game
         {
             bool isValid = entry.Created.AddSeconds(entry.Timer) > DateTime.Now;
 
-            return GameRepository.Instance.TryGetGame(entry.ID, out var game) && game.HasOpenSpots && isValid;
+            return entry.Game.HasOpenSpots && isValid;
         }
 
         private void On(GameOpened @event)
         {
-            GameRepository.Instance.AddGame(@event.ID, @event.Gamemode, new Gameboard());
             Dict.Add(@event.ID, new GameEntry(@event.ID, @event.Gamemode));
         }
         private void On(ChallengeRequested @event)
@@ -61,17 +60,17 @@ namespace VnodeTest.BC.Game
             foreach (GameID id in gameIDs)
                 Dict.Remove(id);
         }
-        private void On(GameClosed @event)
+        private void On(GameDeleted @event)
         {
             Dict.Remove(@event.ID);
+        }
+        private void On(GameEnded @event)
+        {
+            Dict[@event.ID].AllMoves = @event.Moves;
         }
         private void On(ChallengeDenied @event)
         {
             Dict.Remove(@event.ID);
-        }
-        private void On(GameSaved @event)
-        {
-            Dict[@event.ID].AllMoves = @event.Moves;
         }
         private void On(GameJoined @event)
         {
@@ -96,12 +95,16 @@ namespace VnodeTest.BC.Game
         public AggregateID<Account.Account> Challenged { get; set; }
         public AggregateID<Account.Account> PlayerWhite { get; set; }
         public AggregateID<Account.Account> PlayerBlack { get; set; }
+        public VnodeTest.Game Game;
+        public bool GameOver => Winner.HasValue;
+        public PieceColor? Winner => Game?.Winner;
 
 
-        public GameEntry(GameID id, Gamemode gamemode)
+        public GameEntry(GameID id, Gamemode gamemode, double playerClockTime = 50000)
         {
             ID = id;
             Gamemode = gamemode;
+            Game = new VnodeTest.Game(id, gamemode, new Gameboard(), playerClockTime);
         }
 
     }

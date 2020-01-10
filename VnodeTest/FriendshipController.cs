@@ -31,10 +31,11 @@ namespace VnodeTest
         public VNode Render()
         {
             var friends = FriendshipProjection.GetFriends(AccountEntry.ID);
+            var _friends = FriendshipProjection.GetFriends(AccountEntry.ID)?.Select(a => AccountProjection[a.AccountID]);
 
             return Rendermode switch
             {
-                RenderMode.Overview => RenderOverview(friends.Select(t => AccountProjection[t.AccountID])),
+                RenderMode.Overview => RenderOverview(_friends),
                 RenderMode.AddFriend => RenderAddFriend(),
                 RenderMode.DeleteFriend => RenderDeleteFriend(friends.Select(t => new BefriendedAccountEntrySearchWrapper(AccountProjection[t.AccountID], t.FriendshipID))),
                 RenderMode.PendingRequests => RenderReceiveRequests(),
@@ -45,7 +46,7 @@ namespace VnodeTest
         private VNode RenderOverview(IEnumerable<AccountEntry> friendAccounts)
         {
             return Div(
-                Text($"Pending Friendrequests({FriendshipProjection.GetFriendRequestCount(AccountEntry.ID)})", Styles.Btn & Styles.MP4, () => Rendermode = RenderMode.PendingRequests),
+                Text($"Pending Friendrequests({FriendshipProjection.GetFriendshipRequestCount(AccountEntry.ID)})", Styles.Btn & Styles.MP4, () => Rendermode = RenderMode.PendingRequests),
                 Text("Add Friend", Styles.Btn & Styles.MP4, () => Rendermode = RenderMode.AddFriend),
                 Text("Remove Friend", Styles.Btn & Styles.MP4, () => Rendermode = RenderMode.DeleteFriend),
                 friendAccounts.Any() ? Fragment(friendAccounts.Select(f => Text($"{f.Username}", !f.LoggedIn ? Styles.TCblack : Styles.TCgreen))) : Text("you got no friends ;(")

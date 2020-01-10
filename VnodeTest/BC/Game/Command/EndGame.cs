@@ -5,15 +5,19 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace VnodeTest.BC.Game.Event
+namespace VnodeTest.BC.Game.Command
 {
-    class GameSaved : AggregateEvent<Game>
+    public class EndGame : AggregateCommand<Game>
     {
         public string Moves { get; }
 
-        public GameSaved(AggregateID<Game> id, string moves) : base(id)
+        public EndGame(AggregateID<Game> id, string moves) : base(id)
         {
             Moves = moves;
         }
+
+
+
+
     }
 }

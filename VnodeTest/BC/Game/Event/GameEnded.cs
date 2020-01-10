@@ -7,10 +7,13 @@ using System.Threading.Tasks;
 
 namespace VnodeTest.BC.Game.Event
 {
-    public class GameClosed : AggregateEvent<Game>
+    class GameEnded : AggregateEvent<Game>
     {
-        public GameClosed(AggregateID<Game> id) : base(id)
+        public string Moves { get; }
+
+        public GameEnded(AggregateID<Game> id, string moves) : base(id)
         {
+            Moves = moves;
         }
     }
 }

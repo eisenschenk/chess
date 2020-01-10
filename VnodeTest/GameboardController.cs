@@ -69,7 +69,7 @@ namespace VnodeTest
         {
             GameID = AggregateID<BC.Game.Game>.Create();
             BC.Game.Game.Commands.OpenGame(GameID, gamemode);
-            GameRepository.Instance.TryGetGame(GameID, out Game);
+            Game = GameProjection[GameID].Game;
             BC.Game.Game.Commands.JoinGame(GameID, AccountEntry.ID);
 
             //EvE && PvE
@@ -148,7 +148,7 @@ namespace VnodeTest
             var game = GameProjection.Games.Where(x => x.PlayerWhite == AccountEntry.ID).FirstOrDefault();
             if (game != default)
             {
-                GameRepository.Instance.TryGetGame(game.ID, out Game);
+                Game = GameProjection[GameID].Game;
                 PlayerColor = PieceColor.White;
                 Game.HasWhitePlayer = true;
                 RenderMode = Rendermode.Gameboard;
@@ -182,7 +182,7 @@ namespace VnodeTest
                                 BC.Game.Game.Commands.JoinGame(c.ID, c.Challenged);
                                 BC.Game.Game.Commands.AcceptChallenge(c.ID, c.Challenger, c.Challenged);
                                 GameID = c.ID;
-                                GameRepository.Instance.TryGetGame(GameID, out Game);
+                                Game = GameProjection[GameID].Game;
                                 PlayerColor = PieceColor.Black;
                                 Game.HasBlackPlayer = true;
                             }),
@@ -193,15 +193,22 @@ namespace VnodeTest
 
         private VNode FriendChallenge()
         {
-            var friends = FriendshipProjection.GetFriends(AccountEntry.ID).Select(id => AccountProjection[id]);
+            var friends = FriendshipProjection.GetFriends(AccountEntry.ID)?.Select(id => AccountProjection[id.AccountID]);
+            VNode back = Text("back", Styles.Btn & Styles.MP4, () => RenderMode = Rendermode.Gameboard);
+
+            if (friends != default)
+                return Div(
+                    Fragment(friends.Select(f =>
+                            Row(
+                                Text(f.Username),
+                                Text("Challenge", Styles.Btn & Styles.MP4, () => ChallengeFriend(f))
+                            )
+                    )),
+                    back
+                );
             return Div(
-                Fragment(friends.Select(f =>
-                        Row(
-                            Text(f.Username),
-                            Text("Challenge", Styles.Btn & Styles.MP4, () => ChallengeFriend(f))
-                        )
-                )),
-                Text("back", Styles.Btn & Styles.MP4, () => RenderMode = Rendermode.Gameboard)
+                Text("no friends -_-'"),
+                back
             );
         }
 
@@ -209,7 +216,7 @@ namespace VnodeTest
         {
             GameID = AggregateID<BC.Game.Game>.Create();
             BC.Game.Game.Commands.OpenGame(GameID, Gamemode.PvF);
-            GameRepository.Instance.TryGetGame(GameID, out Game);
+            Game = GameProjection[GameID].Game;
 
             BC.Game.Game.Commands.RequestChallenge(GameID, AccountEntry.ID, accountEntry.ID);
             PlayerColor = PieceColor.White;
@@ -249,8 +256,7 @@ namespace VnodeTest
                                 Game.Winner = PieceColor.White;
                             else
                                 Game.Winner = PieceColor.Black;
-                            BC.Game.Game.Commands.CloseGame(GameID);
-                            BC.Game.Game.Commands.SaveGame(GameID, Allmoves());
+                            BC.Game.Game.Commands.EndGame(GameID, Allmoves());
                         })
                     : Text("Close Game", Styles.AbortBtn & Styles.MP4, () =>
                     {
