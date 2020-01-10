@@ -67,6 +67,7 @@
     <Compile Include="BC\Game\Command\AcceptChallenge.cs" />
     <Compile Include="BC\Friendship\Command\AcceptFriendRequest.cs" />
     <Compile Include="BC\Game\Command\DeleteGame.cs" />
+    <Compile Include="BC\Game\Command\DeleteUnwantedChallenges.cs" />
     <Compile Include="BC\Game\Command\DenyChallenge.cs" />
     <Compile Include="BC\Friendship\Command\DenyFriendRequest.cs" />
     <Compile Include="BC\Account\Command\LoginAccount.cs" />
@@ -91,6 +92,7 @@
     <Compile Include="BC\Game\Event\GameJoined.cs" />
     <Compile Include="BC\Game\Event\GameOpened.cs" />
     <Compile Include="BC\Game\Event\GameEnded.cs" />
+    <Compile Include="BC\Game\Event\UnwantedChallengesDeleted.cs" />
     <Compile Include="BC\Game\Game.cs" />
     <Compile Include="BC\Game\GameProjection.cs" />
     <Compile Include="ColorThemeComponent.cs" />
@@ -113,6 +115,7 @@
     <Compile Include="LoginController.cs" />
     <Compile Include="PaginationComponent.cs" />
     <Compile Include="Passwordhelper.cs" />
+    <Compile Include="PM\AcceptChallengePM.cs" />
     <Compile Include="PM\AddFriendPM.cs" />
     <Compile Include="UserController.cs" />
     <Compile Include="Program.cs" />

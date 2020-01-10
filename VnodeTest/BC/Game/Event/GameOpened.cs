@@ -13,9 +13,12 @@ namespace VnodeTest.BC.Game.Event
     public class GameOpened : AggregateEvent<Game>
     {
         public Gamemode Gamemode { get; }
-        public GameOpened(AggregateID<Game> id, Gamemode gamemode) : base(id)
+        public double Clocktimer { get; }
+
+        public GameOpened(AggregateID<Game> id, Gamemode gamemode, double clocktimer) : base(id)
         {
             Gamemode = gamemode;
+            Clocktimer = clocktimer;
         }
     }
 }

@@ -30,34 +30,32 @@ namespace VnodeTest.BC.Game
             {
                 while (true)
                     foreach (GameEntry entry in Games.ToArray())
-                        if (!StillValid(entry))
+                        if (entry.Game.HasOpenSpots && entry.Created.AddSeconds(entry.Timer) < DateTime.Now)
                             Game.Commands.DeleteGame(entry.ID);
             });
-        }
-        //TODO gamedelete & gameended
-        private bool StillValid(GameEntry entry)
-        {
-            bool isValid = entry.Created.AddSeconds(entry.Timer) > DateTime.Now;
-
-            return entry.Game.HasOpenSpots && isValid;
         }
 
         private void On(GameOpened @event)
         {
-            Dict.Add(@event.ID, new GameEntry(@event.ID, @event.Gamemode));
+            Dict.Add(@event.ID, new GameEntry(@event.ID, @event.Gamemode, @event.Clocktimer));
         }
         private void On(ChallengeRequested @event)
         {
             Dict[@event.ID].Challenger = @event.AccountID;
-            Dict[@event.ID].Challenged = @event.FriendID;
+            Dict[@event.ID].Receiver = @event.FriendID;
         }
         private void On(ChallengeAccepted @event)
         {
-            //TODO: ->PM
-            //TOASK: can i use commands here?
-            var gameIDs = Dict.Values.Where(x => x.Challenged == @event.AccountID || x.Challenged == @event.FriendID
-                || x.Challenger == @event.AccountID || x.Challenger == @event.FriendID).Select(f => f.ID);
-            foreach (GameID id in gameIDs)
+            //TOASK: can i use commands here? no
+            Dict[@event.ID].Receiver = default;
+            Dict[@event.ID].Challenger = default;
+
+        }
+        private void On(UnwantedChallengesDeleted @event)
+        {
+            var gameIDs = Dict.Values.Where(x => x.ID != @event.ID && (x.Receiver == @event.Challenger || x.Receiver == @event.Receiver
+                || x.Challenger == @event.Challenger || x.Challenger == @event.Receiver)).Select(f => f.ID);
+            foreach (GameID id in gameIDs.ToArray())
                 Dict.Remove(id);
         }
         private void On(GameDeleted @event)
@@ -75,7 +73,7 @@ namespace VnodeTest.BC.Game
         private void On(GameJoined @event)
         {
             var entry = Dict[@event.ID];
-            if (@event.AccountID != entry.Challenged && entry.PlayerWhite == default)
+            if (@event.AccountID != entry.Receiver && entry.PlayerWhite == default)
                 entry.PlayerWhite = @event.AccountID;
             else
                 entry.PlayerBlack = @event.AccountID;
@@ -92,7 +90,7 @@ namespace VnodeTest.BC.Game
         public int Timer = 30;
         public TimeSpan Elapsed => DateTime.Now - Created;
         public AggregateID<Account.Account> Challenger { get; set; }
-        public AggregateID<Account.Account> Challenged { get; set; }
+        public AggregateID<Account.Account> Receiver { get; set; }
         public AggregateID<Account.Account> PlayerWhite { get; set; }
         public AggregateID<Account.Account> PlayerBlack { get; set; }
         public VnodeTest.Game Game;

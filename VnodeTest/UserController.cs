@@ -14,7 +14,6 @@ namespace VnodeTest
 {
     public class UserController
     {
-        //TODO: autologgout of all users @programstart
         public AccountEntry AccountEntry { get; private set; }
         public BC.Game.GameProjection GameProjection { get; }
         public FriendshipProjection FriendshipProjection { get; }

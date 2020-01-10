@@ -12,9 +12,12 @@ namespace VnodeTest.BC.Game.Command
     public class OpenGame : AggregateCommand<Game>
     {
         public Gamemode Gamemode { get; }
-        public OpenGame(AggregateID<Game> id, Gamemode gamemode) : base(id)
+        public double Clocktimer { get; }
+
+        public OpenGame(AggregateID<Game> id, Gamemode gamemode, double clocktimer) : base(id)
         {
             Gamemode = gamemode;
+            Clocktimer = clocktimer;
         }
 
 

@@ -24,25 +24,9 @@ namespace VnodeTest
                 return _Instance;
             }
         }
-        //TODO game -> gameentry && delete game when game ends, leave gameentry alone
+        //TODO 
         //gameclocktimer before game opengame
         //startgame after first move
-
-
-        //private GameRepository() { }
-
-        //private readonly Dictionary<AggregateID<BC.Game.Game>, Game> Store = new Dictionary<AggregateID<BC.Game.Game>, Game>();
-
-        //public IEnumerable<AggregateID<BC.Game.Game>> Keys => Store.Keys;
-
-        //public Game AddGame(AggregateID<BC.Game.Game> key, Gamemode mode, Gameboard board)
-        //{
-        //    var game = new Game(key, mode, board, TimeSpan.FromSeconds(30000000));
-        //    Store[key] = game;
-        //    return game;
-        //}
-
-        //public bool TryGetGame(AggregateID<BC.Game.Game> key, out Game game) => Store.TryGetValue(key, out game);
     }
     public class Game
     {

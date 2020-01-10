@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 using VnodeTest.BC.Game.Command;
 using VnodeTest.BC.Game.Event;
 using VnodeTest.GameEntities;
+using GameID = ACL.ES.AggregateID<VnodeTest.BC.Game.Game>;
+using AccountID = ACL.ES.AggregateID<VnodeTest.BC.Account.Account>;
 
 namespace VnodeTest.BC.Game
 {
@@ -23,27 +25,27 @@ namespace VnodeTest.BC.Game
         }
         public static class Commands
         {
-            //TODO acceptchallenge PM, 
-            public static void OpenGame(AggregateID<Game> id, Gamemode gamemode) =>
-                MessageBus.Instance.Send(new OpenGame(id, gamemode));
-            public static void RequestChallenge(AggregateID<Game> id, AggregateID<Account.Account> accountID, AggregateID<Account.Account> friendID) =>
+            public static void OpenGame(GameID id, Gamemode gamemode, double clocktimer) =>
+                MessageBus.Instance.Send(new OpenGame(id, gamemode, clocktimer));
+            public static void RequestChallenge(GameID id, AccountID accountID, AccountID friendID) =>
                 MessageBus.Instance.Send(new RequestChallenge(id, accountID, friendID));
-            public static void DenyChallenge(AggregateID<Game> id) =>
+            public static void DenyChallenge(GameID id) =>
                 MessageBus.Instance.Send(new DenyChallenge(id));
-            public static void AcceptChallenge(AggregateID<Game> id, AggregateID<Account.Account> accountID, AggregateID<Account.Account> friendID) =>
-              MessageBus.Instance.Send(new AcceptChallenge(id, accountID, friendID));
-            public static void DeleteGame(AggregateID<Game> id) =>
+            public static void AcceptChallenge(GameID id, AccountID receiverID, AccountID senderID) => PM.AcceptChallengePM.PMacceptChallenge(id, receiverID, senderID);
+            public static void DeleteUnwantedChallenges(GameID id, AccountID receiverId, AccountID senderID) =>
+                MessageBus.Instance.Send(new DeleteUnwantedChallenges(id, receiverId, senderID));
+            public static void DeleteGame(GameID id) =>
                 MessageBus.Instance.Send(new DeleteGame(id));
-            public static void EndGame(AggregateID<Game> id, string moves) =>
+            public static void EndGame(GameID id, string moves) =>
                 MessageBus.Instance.Send(new EndGame(id, moves));
-            public static void JoinGame(AggregateID<Game> id, AggregateID<Account.Account> accountID) =>
+            public static void JoinGame(GameID id, AggregateID<Account.Account> accountID) =>
                 MessageBus.Instance.Send(new GameJoined(id, accountID));
-            
+
         }
         //hier kann man 2 oder mehr events starten
         public IEnumerable<IEvent> On(OpenGame command)
         {
-            yield return new GameOpened(command.ID, command.Gamemode);
+            yield return new GameOpened(command.ID, command.Gamemode, command.Clocktimer);
         }
         public IEnumerable<IEvent> On(RequestChallenge command)
         {
@@ -68,6 +70,10 @@ namespace VnodeTest.BC.Game
         public IEnumerable<IEvent> On(JoinGame command)
         {
             yield return new GameJoined(command.ID, command.AccountID);
+        }
+        public IEnumerable<IEvent> On(DeleteUnwantedChallenges command)
+        {
+            yield return new UnwantedChallengesDeleted(command.ID, command.Receiver, command.Challenger);
         }
 
         public override void Apply(IEvent @event)

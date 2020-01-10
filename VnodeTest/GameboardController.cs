@@ -34,6 +34,8 @@ namespace VnodeTest
         public Rendermode RenderMode;
         private AccountEntry AccountEntry;
         private AggregateID<BC.Game.Game> GameID;
+        RenderClockTimer RenderClockTimerMode = RenderClockTimer.Default;
+
         public GameboardController(AccountProjection accountProjection, AccountEntry accountEntry, BC.Game.GameProjection gameProjection, BC.Friendship.FriendshipProjection friendshipProjection)
         {
             AccountProjection = accountProjection;
@@ -57,18 +59,36 @@ namespace VnodeTest
         {
             var gameroomDisplay = Gameroom == default ? "Random Room" : $"Room {Gameroom}";
 
+            //TODO: clocktimer stuff here so we need it only once!
 
             return Div(
-                Text("Player vs. AI Start", Styles.Btn & Styles.MP4, () => SelectGameMode(Gamemode.PvE)),
-                Text("AI vs. AI Start", Styles.MP4 & Styles.Btn, () => SelectGameMode(Gamemode.EvE)),
+                Row(
+                    Text("Player vs. AI Start", Styles.Btn & Styles.MP4, () => RenderClockTimerMode = RenderClockTimer.PvE),
+                    RenderClockTimerMode == RenderClockTimer.PvE ? RenderClockTimerSelection(Gamemode.PvE) : null    
+                ),
+                Row(
+                    Text("AI vs. AI Start", Styles.MP4 & Styles.Btn, () => RenderClockTimerMode = RenderClockTimer.EvE),
+                    RenderClockTimerMode == RenderClockTimer.EvE ? RenderClockTimerSelection(Gamemode.EvE) : null
+                ),
                 Text("Play vs. Friend", Styles.MP4 & Styles.Btn, () => RenderMode = Rendermode.PlayFriend)
             );
         }
 
-        private void SelectGameMode(Gamemode gamemode, string index = "0")
+        private VNode RenderClockTimerSelection(Gamemode gamemode)
         {
+            return Row(
+                Text("normal", Styles.Btn & Styles.MP4, () => SelectGameMode(gamemode, 3600)),
+                Text("blitz", Styles.Btn & Styles.MP4, () => SelectGameMode(gamemode, 500)),
+                Text("bullet", Styles.Btn & Styles.MP4, () => SelectGameMode(gamemode, 250))
+            );
+        }
+
+        private void SelectGameMode(Gamemode gamemode, double clocktimer = 0)
+        {
+            //TODO: !!
+            RenderClockTimerMode = RenderClockTimer.Default;
             GameID = AggregateID<BC.Game.Game>.Create();
-            BC.Game.Game.Commands.OpenGame(GameID, gamemode);
+            BC.Game.Game.Commands.OpenGame(GameID, gamemode, clocktimer);
             Game = GameProjection[GameID].Game;
             BC.Game.Game.Commands.JoinGame(GameID, AccountEntry.ID);
 
@@ -120,12 +140,13 @@ namespace VnodeTest
             Gameboard,
             PlayFriend,
             ChallengeDenied,
-            WaitingForChallenged
+            WaitingForChallenged,
+            SelectClockTimer
         }
 
         private VNode RenderGameBoard()
         {
-            var challenges = GameProjection.Games.Where(x => x.Challenged == AccountEntry.ID);
+            var challenges = GameProjection.Games.Where(x => x.Receiver == AccountEntry.ID);
             if (challenges.Any() && Game == default)
                 return RenderChallenges(challenges);
             if (RenderMode == Rendermode.PlayFriend)
@@ -144,6 +165,7 @@ namespace VnodeTest
 
         private VNode RenderWaitingRoom()
         {
+            //TODO: after palying vs friend and surrendering the next friendchallenge vs the same friend will start before the other player has accepted the challenge 
             var challenges = GameProjection.Games.Where(x => x.Challenger == AccountEntry.ID);
             var game = GameProjection.Games.Where(x => x.PlayerWhite == AccountEntry.ID).FirstOrDefault();
             if (game != default)
@@ -178,9 +200,7 @@ namespace VnodeTest
                           Text(AccountProjection[c.Challenger].Username),
                           Text("Accept", Styles.Btn & Styles.MP4, () =>
                             {
-                                BC.Game.Game.Commands.JoinGame(c.ID, c.Challenger);
-                                BC.Game.Game.Commands.JoinGame(c.ID, c.Challenged);
-                                BC.Game.Game.Commands.AcceptChallenge(c.ID, c.Challenger, c.Challenged);
+                                BC.Game.Game.Commands.AcceptChallenge(c.ID, c.Challenger, c.Receiver);
                                 GameID = c.ID;
                                 Game = GameProjection[GameID].Game;
                                 PlayerColor = PieceColor.Black;
@@ -190,7 +210,14 @@ namespace VnodeTest
                       )
                 )));
         }
+        private enum RenderClockTimer
+        {
+            Default,
+            PvF,
+            EvE,
+            PvE
 
+        }
         private VNode FriendChallenge()
         {
             var friends = FriendshipProjection.GetFriends(AccountEntry.ID)?.Select(id => AccountProjection[id.AccountID]);
@@ -201,7 +228,13 @@ namespace VnodeTest
                     Fragment(friends.Select(f =>
                             Row(
                                 Text(f.Username),
-                                Text("Challenge", Styles.Btn & Styles.MP4, () => ChallengeFriend(f))
+                                Text("Challenge", Styles.Btn & Styles.MP4, () => RenderClockTimerMode = RenderClockTimer.PvF),
+                                RenderClockTimerMode == RenderClockTimer.PvF
+                                    ? Row(
+                                        Text("normal", Styles.Btn & Styles.MP4, () => ChallengeFriend(f, 3600)),
+                                        Text("blitz", Styles.Btn & Styles.MP4, () => ChallengeFriend(f, 300)),
+                                        Text("bullet", Styles.Btn & Styles.MP4, () => ChallengeFriend(f, 120)))
+                                    : null
                             )
                     )),
                     back
@@ -211,17 +244,19 @@ namespace VnodeTest
                 back
             );
         }
+      
 
-        private void ChallengeFriend(AccountEntry accountEntry)
+        private void ChallengeFriend(AccountEntry accountEntry, double clocktimer)
         {
             GameID = AggregateID<BC.Game.Game>.Create();
-            BC.Game.Game.Commands.OpenGame(GameID, Gamemode.PvF);
+            BC.Game.Game.Commands.OpenGame(GameID, Gamemode.PvF, clocktimer);
             Game = GameProjection[GameID].Game;
 
             BC.Game.Game.Commands.RequestChallenge(GameID, AccountEntry.ID, accountEntry.ID);
             PlayerColor = PieceColor.White;
             Game.HasWhitePlayer = true;
             RenderMode = Rendermode.WaitingForChallenged;
+            RenderClockTimerMode = RenderClockTimer.Default;
         }
 
 
