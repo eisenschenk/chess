@@ -9,7 +9,6 @@ namespace VnodeTest.BC.Friendship.Event
 {
     public class FriendshipAborted : AggregateEvent<Friendship>
     {
-
         public FriendshipAborted(AggregateID<Friendship> id) : base(id)
         {
         }

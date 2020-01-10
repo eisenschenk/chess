@@ -12,9 +12,9 @@ namespace VnodeTest.PM
 {
     public class AddFriendPM
     {
-        //public static void PMAddFriend(AggregateID<Friendship> id,  AggregateID<Account> friendIDa, AggregateID<Account> friendIDb)
+        //public static void PMAddFriend(AggregateID<Friendship> id,  AggregateID<Account> sender, AggregateID<Account> receiver)
         //{
-        //    MessageBus.Instance.Send(new BC.Friendship.Command.AcceptFriendRequest(id, friendIDa, friendIDb));
+        //    MessageBus.Instance.Send(new BC.Friendship.Command.AcceptFriendRequest(id, sender, receiver));
         //    Account.Commands.AddFriend(id, friendID);
         //    Account.Commands.AddFriend(friendID, id);
         //}

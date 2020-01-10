@@ -17,7 +17,7 @@ namespace VnodeTest
         private string Password;
         private bool LoginSelected;
         private bool RegisterSelected;
-        private Rendermode RenderMode;
+        private RenderMode CurrentRenderMode;
 
 
         public LoginController(AccountProjection accountProjection)
@@ -43,33 +43,34 @@ namespace VnodeTest
 
         private VNode RenderLogin(RootController rootController)
         {
-            return
-                 RenderMode == Rendermode.error
-                ? Text("Wrong Username/Password!", Styles.AbortBtn & Styles.MP4, () => RenderMode = Rendermode.@default)
-                : Div(
-                    Input(Username, s => Username = s),
-                    Input(Password, s => Password = s).WithPassword(),
-                    Text("login ", Styles.Btn, () =>
+            if (CurrentRenderMode == RenderMode.error)
+                return Text("Wrong Username/Password!", Styles.AbortBtn & Styles.MP4, () => CurrentRenderMode = RenderMode.@default);
+
+            return Div(
+                Input(Username, s => Username = s),
+                Input(Password, s => Password = s).WithPassword(),
+                Text("login ", Styles.Btn, () =>
+                {
+                    try
                     {
-                        string hashsalt = AccountProjection.Accounts.Where(x => x.Username == Username).FirstOrDefault()?.Password;
-                        if (PasswordHelper.IsPasswordMatch(Password, hashsalt) && hashsalt != default)
-                        {
-                            Account.Commands.LoginAccount(User(hashsalt).ID, Username, Password, hashsalt);
-                            rootController.AccountEntry = User(hashsalt);
-                        }
-                        else
-                            RenderMode = Rendermode.error;
-                    }),
-                    Text("back", Styles.Btn & Styles.MP4, () => LoginSelected = false)
-                );
+                        Account.Commands.LoginAccount(GetUser().ID, Password);
+                    }
+                    catch (ArgumentException)
+                    {
+                        CurrentRenderMode = RenderMode.error;
+                    }
+                    rootController.AccountEntry = GetUser();
+                }),
+                Text("back", Styles.Btn & Styles.MP4, () => LoginSelected = false)
+            );
         }
 
         private VNode RenderRegisterAccount()
         {
 
             return
-                RenderMode == Rendermode.error
-                ? Text("Username taken!", Styles.AbortBtn & Styles.MP4, () => RenderMode = Rendermode.@default)
+                CurrentRenderMode == RenderMode.error
+                ? Text("Username taken!", Styles.AbortBtn & Styles.MP4, () => CurrentRenderMode = RenderMode.@default)
                 : Div(
                     Input(Username, s => Username = s),
                     Input(Password, s => Password = s).WithPassword(),
@@ -83,15 +84,15 @@ namespace VnodeTest
                             RegisterSelected = false;
                         }
                         else
-                            RenderMode = Rendermode.error;
+                            CurrentRenderMode = RenderMode.error;
                     }),
                     Text("back", Styles.Btn & Styles.MP4, () => RegisterSelected = false)
                 );
         }
 
-        private AccountEntry User(string hashsalt) => AccountProjection.Accounts.Where(p => p.Password == hashsalt && p.Username == Username).SingleOrDefault();
+        private AccountEntry GetUser() => AccountProjection.Accounts.Where(p => p.Username == Username).SingleOrDefault();
 
-        private enum Rendermode
+        private enum RenderMode
         {
             @default,
             error

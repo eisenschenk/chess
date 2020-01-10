@@ -9,13 +9,8 @@ namespace VnodeTest.BC.Account.Event
 {
     public class AccountLoggedIn : AggregateEvent<Account>
     {
-        public string Username { get; }
-        public string Password { get; }
-
-        public AccountLoggedIn(AggregateID<Account> id, string username, string password) : base(id)
+        public AccountLoggedIn(AggregateID<Account> id) : base(id)
         {
-            Username = username;
-            Password = password;
         }
     }
 }

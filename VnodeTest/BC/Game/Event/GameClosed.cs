@@ -9,7 +9,6 @@ namespace VnodeTest.BC.Game.Event
 {
     public class GameClosed : AggregateEvent<Game>
     {
-        public int RepositoryID { get; }
         public GameClosed(AggregateID<Game> id) : base(id)
         {
         }

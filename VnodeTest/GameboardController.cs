@@ -193,8 +193,7 @@ namespace VnodeTest
 
         private VNode FriendChallenge()
         {
-            var _friends = FriendshipProjection.GetFriends(AccountEntry.ID);
-            var friends = AccountProjection.Accounts.Where(x => _friends.Contains(x.ID));
+            var friends = FriendshipProjection.GetFriends(AccountEntry.ID).Select(id => AccountProjection[id]);
             return Div(
                 Fragment(friends.Select(f =>
                         Row(

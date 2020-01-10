@@ -9,7 +9,6 @@ namespace VnodeTest.BC.Friendship.Command
 {
     public class DenyFriendRequest : AggregateCommand<Friendship>
     {
-
         public DenyFriendRequest(AggregateID<Friendship> id) : base(id)
         {
         }

@@ -30,14 +30,13 @@ namespace VnodeTest
 
         public VNode Render()
         {
-            var _friends = FriendshipProjection.GetFriends(AccountEntry.ID);
-            var friends = AccountProjection.Accounts.Where(a => _friends.Contains(a.ID));
+            var friends = FriendshipProjection.GetFriends(AccountEntry.ID);
 
             return Rendermode switch
             {
-                RenderMode.Overview => RenderOverview(friends),
+                RenderMode.Overview => RenderOverview(friends.Select(t => AccountProjection[t.AccountID])),
                 RenderMode.AddFriend => RenderAddFriend(),
-                RenderMode.DeleteFriend => RenderDeleteFriend(friends),
+                RenderMode.DeleteFriend => RenderDeleteFriend(friends.Select(t => new BefriendedAccountEntrySearchWrapper(AccountProjection[t.AccountID], t.FriendshipID))),
                 RenderMode.PendingRequests => RenderReceiveRequests(),
                 RenderMode.PlayFriend => RenderChallengeFriend(),
                 _ => null,
@@ -46,7 +45,7 @@ namespace VnodeTest
         private VNode RenderOverview(IEnumerable<AccountEntry> friendAccounts)
         {
             return Div(
-                Text($"Pending Friendrequests({FriendshipProjection.GetFriendrequests(AccountEntry.ID).Count()})", Styles.Btn & Styles.MP4, () => Rendermode = RenderMode.PendingRequests),
+                Text($"Pending Friendrequests({FriendshipProjection.GetFriendRequestCount(AccountEntry.ID)})", Styles.Btn & Styles.MP4, () => Rendermode = RenderMode.PendingRequests),
                 Text("Add Friend", Styles.Btn & Styles.MP4, () => Rendermode = RenderMode.AddFriend),
                 Text("Remove Friend", Styles.Btn & Styles.MP4, () => Rendermode = RenderMode.DeleteFriend),
                 friendAccounts.Any() ? Fragment(friendAccounts.Select(f => Text($"{f.Username}", !f.LoggedIn ? Styles.TCblack : Styles.TCgreen))) : Text("you got no friends ;(")
@@ -57,9 +56,9 @@ namespace VnodeTest
         {
             return Div(
                 Fragment(FriendshipProjection.GetFriendshipRequests(AccountEntry.ID).Select(p => Row(
-                        Text(AccountProjection.Accounts.Where(x => x.ID == p.FriendAID).FirstOrDefault().Username),
-                        Text("accept", Styles.Btn & Styles.MP4, () => Friendship.Commands.AcceptFriendRequest(p.ID, AccountEntry.ID, p.FriendAID)),
-                        Text("deny", Styles.Btn & Styles.MP4, () => Friendship.Commands.DenyFriendRequest(p.ID))
+                    Text(AccountProjection[p.Sender].Username),
+                    Text("accept", Styles.Btn & Styles.MP4, () => Friendship.Commands.AcceptFriendRequest(p.ID)),
+                    Text("deny", Styles.Btn & Styles.MP4, () => Friendship.Commands.DenyFriendRequest(p.ID))
                 ))),
                 Text("back", Styles.Btn & Styles.MP4, () => Rendermode = RenderMode.Overview)
             );
@@ -76,18 +75,40 @@ namespace VnodeTest
         private VNode RenderAddFriend()
         {
             return Div(
-                SearchbarComponent<AccountEntry>.Render(AccountProjection.Accounts, a => Friendship.Commands.RequestFriend(AggregateID<Friendship>.Create(), AccountEntry.ID, a.ID)),
+                SearchbarComponent<BefriendedAccountEntrySearchWrapper>.Render(AccountProjection.Accounts.Select(a => new BefriendedAccountEntrySearchWrapper(a, default)),
+                    w => Friendship.Commands.RequestFriend(AggregateID<Friendship>.Create(), AccountEntry.ID, w.AccountEntry.ID)),
                 Text("back", Styles.Btn & Styles.MP4, () => Rendermode = RenderMode.Overview)
             );
         }
 
-        private VNode RenderDeleteFriend(IEnumerable<AccountEntry> friends)
+        private VNode RenderDeleteFriend(IEnumerable<BefriendedAccountEntrySearchWrapper> friends)
         {
             return Div(
-                 SearchbarComponent<AccountEntry>.Render(friends, a =>
-                 Friendship.Commands.AbortFriend(FriendshipProjection.GetFriendshipEntry(AccountEntry.ID, a.ID).ID)),
-                 Text("back", Styles.Btn & Styles.MP4, () => Rendermode = RenderMode.Overview)
+                SearchbarComponent<BefriendedAccountEntrySearchWrapper>.Render(friends, w =>
+                    Friendship.Commands.AbortFriend(w.FriendshipID)),
+                Text("back", Styles.Btn & Styles.MP4, () => Rendermode = RenderMode.Overview)
             );
+        }
+
+        private class BefriendedAccountEntrySearchWrapper : ISearchable
+        {
+            public AccountEntry AccountEntry { get; }
+            public AggregateID<Friendship> FriendshipID { get; }
+
+            public BefriendedAccountEntrySearchWrapper(AccountEntry accountEntry, AggregateID<Friendship> friendshipID)
+            {
+                AccountEntry = accountEntry;
+                FriendshipID = friendshipID;
+            }
+
+            VNode ISearchable.Render()
+            {
+                return Text(AccountEntry.Username);
+            }
+            bool ISearchable.IsMatch(string searchquery)
+            {
+                return AccountEntry.Username.Contains(searchquery);
+            }
         }
 
         enum RenderMode

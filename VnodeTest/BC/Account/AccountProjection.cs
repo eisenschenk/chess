@@ -26,7 +26,7 @@ namespace VnodeTest.BC.Account
 
         private void On(AccountRegistered @event)
         {
-            Dict.Add(@event.ID, new AccountEntry(@event.ID, @event.Username, @event.Password, @event.Timestamp, new List<AccountID>()));
+            Dict.Add(@event.ID, new AccountEntry(@event.ID, @event.Username, @event.Password, @event.Timestamp));
         }
         private void On(AccountLoggedIn @event)
         {
@@ -38,33 +38,28 @@ namespace VnodeTest.BC.Account
         }
 
 
+
+        public void LogoutAllAccounts()
+        {
+            foreach (AccountEntry entry in Accounts)
+                entry.LoggedIn = false;
+        }
     }
 
-    public class AccountEntry : ISearchable
+    public class AccountEntry
     {
         public AccountID ID { get; }
         public string Username { get; }
         public string Password { get; }
         public DateTimeOffset CreatedAt { get; }
         public bool LoggedIn { get; set; }
-        public List<AccountID> ReceivedChallenges { get; } = new List<AccountID>();
-        public List<AccountID> PendingChallenges { get; } = new List<AccountID>();
 
-        public AccountEntry(AccountID id, string username, string password, DateTimeOffset createdAt, List<AccountID> friends)
+        public AccountEntry(AccountID id, string username, string password, DateTimeOffset createdAt)
         {
             ID = id;
             Username = username;
             Password = password;
             CreatedAt = createdAt;
-        }
-
-        VNode ISearchable.Render()
-        {
-            return Text(Username);
-        }
-        bool ISearchable.IsMatch(string searchquery)
-        {
-            return Username.Contains(searchquery);
         }
     }
 }

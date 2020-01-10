@@ -24,7 +24,9 @@ namespace VnodeTest
                 return _Instance;
             }
         }
-
+//TODO game -> gameentry && delete game when game ends, leave gameentry alone
+//gameclocktimer before game opengame
+//startgame after first move
         private GameRepository() { }
 
         private readonly Dictionary<AggregateID<BC.Game.Game>, Game> Store = new Dictionary<AggregateID<BC.Game.Game>, Game>();
@@ -96,7 +98,6 @@ namespace VnodeTest
             return (startX + startY * 8, targetX + targetY * 8);
         }
 
-        //TODO naming
         public void TryEngineMove(string engineMove, (bool, bool) engineControlled = default)
         {
             var _engineMove = GetCoordinates(engineMove);

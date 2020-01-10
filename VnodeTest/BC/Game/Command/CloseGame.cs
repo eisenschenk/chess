@@ -10,7 +10,6 @@ namespace VnodeTest.BC.Game.Command
 {
     public class CloseGame : AggregateCommand<Game>
     {
-        public int RepositoryID { get; }
         public CloseGame(AggregateID<Game> id) : base(id)
         {
         }

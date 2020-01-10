@@ -13,18 +13,17 @@ namespace VnodeTest.BC.Game
 {
     public class Game : AggregateRoot<Game>
     {
-        public bool Created = false;
-        public Gamemode Gamemode;
-        public int RepositoryID;
+        private bool Created = false;
+        private Gamemode Gamemode;
         public class Handler : AggregateCommandHandler<Game>
         {
             public Handler(IRepository repository, IMessageBus bus) : base(repository, bus)
             {
             }
         }
-        // aggregate rooot nur mit ID vom selben Typ aufrufen
         public static class Commands
         {
+            //TODO acceptchallenge PM, 
             public static void OpenGame(AggregateID<Game> id, Gamemode gamemode) =>
                 MessageBus.Instance.Send(new OpenGame(id, gamemode));
             public static void RequestChallenge(AggregateID<Game> id, AggregateID<Account.Account> accountID, AggregateID<Account.Account> friendID) =>
@@ -39,8 +38,7 @@ namespace VnodeTest.BC.Game
                 MessageBus.Instance.Send(new SaveGame(id, moves));
             public static void JoinGame(AggregateID<Game> id, AggregateID<Account.Account> accountID) =>
                 MessageBus.Instance.Send(new GameJoined(id, accountID));
-            public static void ResetGame(AggregateID<Game> id) =>
-                MessageBus.Instance.Send(new GamesResetted(id));
+            
         }
         //hier kann man 2 oder mehr events starten
         public IEnumerable<IEvent> On(OpenGame command)
@@ -70,10 +68,6 @@ namespace VnodeTest.BC.Game
         public IEnumerable<IEvent> On(JoinGame command)
         {
             yield return new GameJoined(command.ID, command.AccountID);
-        }
-        public IEnumerable<IEvent> On(ResetGames command)
-        {
-            yield return new GamesResetted(command.ID);
         }
 
         public override void Apply(IEvent @event)

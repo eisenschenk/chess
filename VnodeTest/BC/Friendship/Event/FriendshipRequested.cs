@@ -9,13 +9,13 @@ namespace VnodeTest.BC.Friendship.Event
 {
     public class FriendshipRequested : AggregateEvent<Friendship>
     {
-        public AggregateID<Account.Account> FriendIDa { get; }
-        public AggregateID<Account.Account> FriendIDb { get; }
+        public AggregateID<Account.Account> Sender { get; }
+        public AggregateID<Account.Account> Receiver { get; }
 
-        public FriendshipRequested(AggregateID<Friendship> id, AggregateID<Account.Account> friendIDa, AggregateID<Account.Account> friendIDb) : base(id)
+        public FriendshipRequested(AggregateID<Friendship> id, AggregateID<Account.Account> sender, AggregateID<Account.Account> receiver) : base(id)
         {
-            FriendIDa = friendIDa;
-            FriendIDb = friendIDb;
+            Sender = sender;
+            Receiver = receiver;
         }
     }
     

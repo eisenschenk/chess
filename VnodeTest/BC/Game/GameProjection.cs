@@ -22,10 +22,9 @@ namespace VnodeTest.BC.Game
 
         public GameProjection(IEventStore store, IMessageBus bus) : base(store, bus)
         {
-
         }
 
-        public void StartThread()
+        public void CloseGamesAfterChallengeExpires()
         {
             ThreadPool.QueueUserWorkItem(o =>
             {
@@ -35,16 +34,14 @@ namespace VnodeTest.BC.Game
                             Game.Commands.CloseGame(entry.ID);
             });
         }
-
+        //TODO gamedelete & gameended
         private bool StillValid(GameEntry entry)
         {
-            bool IsValid()
-            {
-                return entry.Created.AddSeconds(entry.Timer) > DateTime.Now;
-            }
+            bool isValid = entry.Created.AddSeconds(entry.Timer) > DateTime.Now;
 
-            return GameRepository.Instance.TryGetGame(entry.ID, out var game) && game.HasOpenSpots && IsValid();
+            return GameRepository.Instance.TryGetGame(entry.ID, out var game) && game.HasOpenSpots && isValid;
         }
+
         private void On(GameOpened @event)
         {
             GameRepository.Instance.AddGame(@event.ID, @event.Gamemode, new Gameboard());
@@ -57,13 +54,12 @@ namespace VnodeTest.BC.Game
         }
         private void On(ChallengeAccepted @event)
         {
+            //TODO: ->PM
+            //TOASK: can i use commands here?
             var gameIDs = Dict.Values.Where(x => x.Challenged == @event.AccountID || x.Challenged == @event.FriendID
                 || x.Challenger == @event.AccountID || x.Challenger == @event.FriendID).Select(f => f.ID);
             foreach (GameID id in gameIDs)
-            {
-                Dict[id].Challenged = default;
-                Dict[id].Challenger = default;
-            }
+                Dict.Remove(id);
         }
         private void On(GameClosed @event)
         {
@@ -85,15 +81,11 @@ namespace VnodeTest.BC.Game
             else
                 entry.PlayerBlack = @event.AccountID;
         }
-        private void On(GamesResetted @event)
-        {
-        }
     }
 
     public class GameEntry
     {
         public GameID ID { get; }
-        public int RepositoryID { get; }
         public Gamemode Gamemode { get; }
         public string AllMoves;
         public bool LoggedIn;

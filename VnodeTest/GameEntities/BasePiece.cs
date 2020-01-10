@@ -73,6 +73,7 @@ namespace VnodeTest.GameEntities
                 && currentTarget.X < 8
                 && currentTarget.X >= 0
                 && currentTarget.Y < 8
+
                 && currentTarget.Y >= 0)
             {
                 var notNull = gameboard.Board[ConvertToOneD(currentTarget)] != null;

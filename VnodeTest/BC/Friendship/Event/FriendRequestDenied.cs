@@ -9,7 +9,6 @@ namespace VnodeTest.BC.Friendship.Event
 {
     public class FriendRequestDenied : AggregateEvent<Friendship>
     {
-
         public FriendRequestDenied(AggregateID<Friendship> id) : base(id)
         {
         }

@@ -9,7 +9,6 @@ namespace VnodeTest.BC.Friendship.Command
 {
     public class AbortFriendship : AggregateCommand<Friendship>
     {
-
         public AbortFriendship(AggregateID<Friendship> id) : base(id)
         {
         }

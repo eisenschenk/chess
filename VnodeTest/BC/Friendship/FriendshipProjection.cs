@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using FriendshipID = ACL.ES.AggregateID<VnodeTest.BC.Friendship.Friendship>;
+using AccountID = ACL.ES.AggregateID<VnodeTest.BC.Account.Account>;
 using static ACL.UI.React.DOM;
 using ACL.UI.React;
 using ACL.MQ;
@@ -19,73 +20,106 @@ namespace VnodeTest.BC.Friendship
         public FriendshipEntry this[FriendshipID id] => Dict[id];
         public IEnumerable<FriendshipEntry> Friendships => Dict.Values;
 
+        private readonly Dictionary<AccountID, Dictionary<FriendshipID, FriendshipEntry>> AccountFriendRequests = new Dictionary<AccountID, Dictionary<FriendshipID, FriendshipEntry>>();
+        private readonly Dictionary<AccountID, Dictionary<FriendshipID, FriendshipEntry>> AccountFriends = new Dictionary<AccountID, Dictionary<FriendshipID, FriendshipEntry>>();
 
         public FriendshipProjection(IEventStore store, IMessageBus bus) : base(store, bus)
         {
         }
-
         private void On(FriendRequestAccepted @event)
         {
-            Dict[@event.ID].Accepted = true;
-            Dict[@event.ID].Requested = false;
+            var friendship = Dict[@event.ID];
+
+            friendship.Accepted = true;
+            friendship.Requested = false;
+
+            DeleteAccountFriendRequest(friendship.Sender, @event.ID);
+            DeleteAccountFriendRequest(friendship.Receiver, @event.ID);
+            AddAccountFriend(friendship.Sender, friendship);
+            AddAccountFriend(friendship.Receiver, friendship);
         }
         private void On(FriendshipAborted @event)
         {
+            var friendship = Dict[@event.ID];
+
             Dict.Remove(@event.ID);
+
+            DeleteAccountFriend(friendship.Sender, @event.ID);
+            DeleteAccountFriend(friendship.Receiver, @event.ID);
         }
         private void On(FriendshipRequested @event)
         {
-            Dict.Add(@event.ID, new FriendshipEntry(@event.ID, @event.FriendIDa, @event.FriendIDb));
+            var friendship = new FriendshipEntry(@event.ID, @event.Sender, @event.Receiver);
+
+            Dict.Add(@event.ID, friendship);
             Dict[@event.ID].Requested = true;
+
+            AddAccountFriendRequest(@event.Sender, friendship);
+            AddAccountFriendRequest(@event.Receiver, friendship);
         }
         private void On(FriendRequestDenied @event)
         {
+            var friendship = Dict[@event.ID];
+
             Dict.Remove(@event.ID);
+
+            DeleteAccountFriendRequest(friendship.Sender, @event.ID);
+            DeleteAccountFriendRequest(friendship.Receiver, @event.ID);
         }
 
-
-        public IEnumerable<AggregateID<Account.Account>> GetFriendrequests(AggregateID<Account.Account> accountID)
+        private void AddAccountFriendRequest(AccountID accountID, FriendshipEntry friendship)
         {
-            return Friendships.Where(f => f.FriendBID == accountID && f.Accepted == false && f.Requested == true).Select(s => s.FriendAID);
+            if (!AccountFriendRequests.TryGetValue(accountID, out var friendships))
+                AccountFriendRequests.Add(accountID, friendships = new Dictionary<FriendshipID, FriendshipEntry>());
+            friendships.Add(friendship.ID, friendship);
         }
 
-        public IEnumerable<AggregateID<Account.Account>> GetFriends(AggregateID<Account.Account> accountID)
+        private void DeleteAccountFriendRequest(AccountID accountID, FriendshipID friendshipID)
         {
-            var _friendships = Friendships.Where(f => f.Accepted == true && (f.FriendAID == accountID || f.FriendBID == accountID));
-            var _someFriendsA = _friendships.Where(x => x.FriendAID != accountID).Select(f => f.FriendAID);
-            var _someFriendsB = _friendships.Where(x => x.FriendBID != accountID).Select(f => f.FriendBID);
-            return _someFriendsA.Concat(_someFriendsB);
+            AccountFriendRequests[accountID].Remove(friendshipID);
         }
 
-        public IEnumerable<FriendshipEntry> GetFriendshipRequests(AggregateID<Account.Account> accountID)
+        private void AddAccountFriend(AccountID accountID, FriendshipEntry friendship)
         {
-            return Friendships.Where(x => x.Requested == true && x.FriendBID == accountID && x.Accepted == false);
+            if (!AccountFriends.TryGetValue(accountID, out var friendships))
+                AccountFriends.Add(accountID, friendships = new Dictionary<FriendshipID, FriendshipEntry>());
+            friendships.Add(friendship.ID, friendship);
         }
 
-        public FriendshipEntry GetFriendshipEntry(AggregateID<Account.Account> accountIDa, AggregateID<Account.Account> accountIDb)
+        private void DeleteAccountFriend(AccountID accountID, FriendshipID friendshipID)
         {
-            return Friendships
-                .Where(e => e.Accepted == true && ((e.FriendAID == accountIDa && e.FriendBID == accountIDb) || e.FriendAID == accountIDb && e.FriendBID == accountIDa))
-                .SingleOrDefault();
+            AccountFriends[accountID].Remove(friendshipID);
+        }
+
+        public IEnumerable<(AccountID AccountID, FriendshipID FriendshipID)> GetFriends(AccountID accountID)
+        {
+            return AccountFriends[accountID].Values.Select(f => (f.Sender == accountID ? f.Receiver : f.Sender, f.ID));
+        }
+
+        public IEnumerable<FriendshipEntry> GetFriendshipRequests(AccountID accountID)
+        {
+            return AccountFriendRequests[accountID].Values;
+        }
+
+        public int GetFriendshipRequestCount(AccountID accountID)
+        {
+            return AccountFriendRequests[accountID].Count;
         }
     }
 
-    public class FriendshipEntry //: ISearchable
+    public class FriendshipEntry 
     {
         public FriendshipID ID { get; }
-        public AggregateID<Account.Account> FriendAID;
-        public AggregateID<Account.Account> FriendBID;
+        public AccountID Sender;
+        public AccountID Receiver;
         public bool Accepted;
         public bool Requested;
-        //public List<Account.Account> PendingFriendRequests { get; } = new List<Account.Account>();
-        //public List<Account.Account> ReceivedFriendRequests { get; } = new List<Account.Account>();
 
-
-        public FriendshipEntry(FriendshipID id, AggregateID<Account.Account> friendA, AggregateID<Account.Account> friendB)
+        public FriendshipEntry(FriendshipID id, AccountID friendA, AccountID friendB)
         {
             ID = id;
-            FriendAID = friendA;
-            FriendBID = friendB;
+            Sender = friendA;
+            Receiver = friendB;
         }
 
     }

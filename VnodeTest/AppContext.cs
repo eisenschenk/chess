@@ -49,8 +49,10 @@ namespace VnodeTest
             FriendshipProjection = new FriendshipProjection(store, bus);
             FriendshipProjection.Init();
             FriendshipHandler = new Friendship.Handler(Repository, bus);
+            //autologout ohne events
+            AccountProjection.LogoutAllAccounts();
 
-            GameProjection.StartThread();
+            GameProjection.CloseGamesAfterChallengeExpires();
         }
 
         public GameboardController CreateGameboardController(AccountEntry accountEntry) =>

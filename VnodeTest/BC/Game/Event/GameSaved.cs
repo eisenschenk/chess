@@ -9,7 +9,6 @@ namespace VnodeTest.BC.Game.Event
 {
     class GameSaved : AggregateEvent<Game>
     {
-        public int RepositoryID { get; }
         public string Moves { get; }
 
         public GameSaved(AggregateID<Game> id, string moves) : base(id)

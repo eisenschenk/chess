@@ -78,7 +78,6 @@
     <Compile Include="BC\Account\Event\AccountLoggedIn.cs" />
     <Compile Include="BC\Account\Event\AccountLoggedOut.cs" />
     <Compile Include="BC\Account\Event\AccountRegistered.cs" />
-    <Compile Include="BC\Game\Command\ResetGames.cs" />
     <Compile Include="BC\Game\Command\SaveGame.cs" />
     <Compile Include="BC\Game\Event\ChallengeAccepted.cs" />
     <Compile Include="BC\Game\Event\ChallengeDenied.cs" />
@@ -92,7 +91,6 @@
     <Compile Include="BC\Game\Event\GameJoined.cs" />
     <Compile Include="BC\Game\Event\GameOpened.cs" />
     <Compile Include="BC\Game\Event\GameSaved.cs" />
-    <Compile Include="BC\Game\Event\GamesResetted.cs" />
     <Compile Include="BC\Game\Game.cs" />
     <Compile Include="BC\Game\GameProjection.cs" />
     <Compile Include="ColorThemeComponent.cs" />
@@ -116,7 +114,6 @@
     <Compile Include="PaginationComponent.cs" />
     <Compile Include="Passwordhelper.cs" />
     <Compile Include="PM\AddFriendPM.cs" />
-    <Compile Include="PM\DeleteFriendPM.cs" />
     <Compile Include="UserController.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
